@@ -1,26 +1,66 @@
 ---
-title: "Crash Course in Git, Quarto, and R"
+title: Crash Course in Git, Quarto, and R
+author: 
+  - name: Dillon Labonte
+    email: dillon.labonte@snhu.edu
+    affiliations: 
+      - name: Southern New Hampshire University
 format: html
-editor: visual
+date: 1/8/2025
+date-modified: today
+date-format: long
+theme: flatly
+toc: true
+code-fold: true
+warning: false
+message: false
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+## Working with Data
 
 ```{r}
-1 + 1
+
+library(tidyverse)
+library(kableExtra)
+
+# styling
+options(kable_styling_bootstrap_options = c("hover", "striped"))
+theme_set(theme_bw(base_size = 14))
+
+# read in hits data
+hits <- read_csv("https://raw.githubusercontent.com/agmath/agmath.github.io/refs/heads/master/data/classification/battedballs.csv")
+
+# read in parks data
+parks <- read_csv("https://raw.githubusercontent.com/agmath/agmath.github.io/refs/heads/master/data/classification/park_dimensions.csv")
+
 ```
 
-You can add options to executable code like this
+## Exploring Our Data
 
 ```{r}
-#| echo: false
-2 * 2
+
+hits |>
+  head() |>
+  kable() |>
+  kable_styling()
+
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+```{r}
+
+parks |>
+  head() |>
+  kable() |>
+  kable_styling()
+
+```
+
+## Joining the Data
+
+```{r}
+
+hits <- hits |>
+  left_join(parks, by = c("park" = "park"))
+
+```
+

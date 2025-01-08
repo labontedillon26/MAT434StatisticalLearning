@@ -6,6 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Dillon Labonte">
+<meta name="dcterms.date" content="2025-01-08">
 
 <title>Crash Course in Git, Quarto, and R</title>
 <style>
@@ -67,14 +69,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="CrashCourse_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="CrashCourse_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="CrashCourse_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="CrashCourse_files/libs/kePrint-0.0.1/kePrint.js"></script>
+
+<link href="CrashCourse_files/libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
 
 
 </head>
 
-<body class="fullcontent">
+<body>
 
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#working-with-data" id="toc-working-with-data" class="nav-link active" data-scroll-target="#working-with-data">Working with Data</a></li>
+  <li><a href="#exploring-our-data" id="toc-exploring-our-data" class="nav-link" data-scroll-target="#exploring-our-data">Exploring Our Data</a></li>
+  <li><a href="#joining-the-data" id="toc-joining-the-data" class="nav-link" data-scroll-target="#joining-the-data">Joining the Data</a></li>
+  </ul>
+</nav>
+</div>
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
@@ -83,11 +99,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 
 
+<div class="quarto-title-meta-author">
+  <div class="quarto-title-meta-heading">Author</div>
+  <div class="quarto-title-meta-heading">Affiliation</div>
+  
+    <div class="quarto-title-meta-contents">
+    <p class="author">Dillon Labonte <a href="mailto:dillon.labonte@snhu.edu" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            Southern New Hampshire University
+          </p>
+      </div>
+  </div>
 
 <div class="quarto-title-meta">
 
-    
+      
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 8, 2025</p>
+    </div>
+  </div>
   
+    <div>
+    <div class="quarto-title-meta-heading">Modified</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date-modified">January 8, 2025</p>
+    </div>
+  </div>
     
   </div>
   
@@ -96,26 +137,342 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="quarto" class="level2">
-<h2 class="anchored" data-anchor-id="quarto">Quarto</h2>
-<p>Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <a href="https://quarto.org" class="uri">https://quarto.org</a>.</p>
+<section id="working-with-data" class="level2">
+<h2 class="anchored" data-anchor-id="working-with-data">Working with Data</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># styling</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">kable_styling_bootstrap_options =</span> <span class="fu">c</span>(<span class="st">"hover"</span>, <span class="st">"striped"</span>))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">14</span>))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># read in hits data</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>hits <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://raw.githubusercontent.com/agmath/agmath.github.io/refs/heads/master/data/classification/battedballs.csv"</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># read in parks data</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>parks <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://raw.githubusercontent.com/agmath/agmath.github.io/refs/heads/master/data/classification/park_dimensions.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
 </section>
-<section id="running-code" class="level2">
-<h2 class="anchored" data-anchor-id="running-code">Running Code</h2>
-<p>When you click the <strong>Render</strong> button a document will be generated that includes both content and the output of embedded code. You can embed code like this:</p>
+<section id="exploring-our-data" class="level2">
+<h2 class="anchored" data-anchor-id="exploring-our-data">Exploring Our Data</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> <span class="sc">+</span> <span class="dv">1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2</code></pre>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>hits <span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>() <span class="sc">|&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="table table-hover table-striped caption-top table-sm small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">bip_id</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">game_date</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">home_team</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">away_team</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">batter_team</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">batter_name</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">pitcher_name</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">batter_id</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">pitcher_id</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">is_batter_lefty</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">is_pitcher_lefty</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">bb_type</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">bearing</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">pitch_name</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">park</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">inning</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">outs_when_up</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">balls</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">strikes</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">plate_x</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">plate_z</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">pitch_mph</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">launch_speed</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">launch_angle</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">is_home_run</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">61093</td>
+<td style="text-align: left;">2020-09-11</td>
+<td style="text-align: left;">TB</td>
+<td style="text-align: left;">BOS</td>
+<td style="text-align: left;">BOS</td>
+<td style="text-align: left;">bogaerts, xander</td>
+<td style="text-align: left;">snell, blake</td>
+<td style="text-align: right;">593428</td>
+<td style="text-align: right;">605483</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">ground_ball</td>
+<td style="text-align: left;">center</td>
+<td style="text-align: left;">Changeup</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1.65</td>
+<td style="text-align: right;">2.83</td>
+<td style="text-align: right;">89.5</td>
+<td style="text-align: right;">58.5</td>
+<td style="text-align: right;">-47</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">117924</td>
+<td style="text-align: left;">2020-08-31</td>
+<td style="text-align: left;">CIN</td>
+<td style="text-align: left;">STL</td>
+<td style="text-align: left;">STL</td>
+<td style="text-align: left;">edman, tommy</td>
+<td style="text-align: left;">lorenzen, michael</td>
+<td style="text-align: right;">669242</td>
+<td style="text-align: right;">547179</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">ground_ball</td>
+<td style="text-align: left;">center</td>
+<td style="text-align: left;">Changeup</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">-0.97</td>
+<td style="text-align: right;">1.82</td>
+<td style="text-align: right;">86.4</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">-8</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">84178</td>
+<td style="text-align: left;">2020-09-12</td>
+<td style="text-align: left;">WSH</td>
+<td style="text-align: left;">ATL</td>
+<td style="text-align: left;">WSH</td>
+<td style="text-align: left;">soto, juan</td>
+<td style="text-align: left;">anderson, ian</td>
+<td style="text-align: right;">665742</td>
+<td style="text-align: right;">666120</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">ground_ball</td>
+<td style="text-align: left;">center</td>
+<td style="text-align: left;">Changeup</td>
+<td style="text-align: right;">29</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">-0.74</td>
+<td style="text-align: right;">2.35</td>
+<td style="text-align: right;">89.7</td>
+<td style="text-align: right;">71.9</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">25265</td>
+<td style="text-align: left;">2020-09-04</td>
+<td style="text-align: left;">CLE</td>
+<td style="text-align: left;">MIL</td>
+<td style="text-align: left;">CLE</td>
+<td style="text-align: left;">lindor, francisco</td>
+<td style="text-align: left;">burnes, corbin</td>
+<td style="text-align: right;">596019</td>
+<td style="text-align: right;">669203</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">ground_ball</td>
+<td style="text-align: left;">left</td>
+<td style="text-align: left;">Changeup</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">-0.72</td>
+<td style="text-align: right;">1.65</td>
+<td style="text-align: right;">89.7</td>
+<td style="text-align: right;">71.5</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">117768</td>
+<td style="text-align: left;">2020-08-25</td>
+<td style="text-align: left;">STL</td>
+<td style="text-align: left;">KC</td>
+<td style="text-align: left;">STL</td>
+<td style="text-align: left;">wong, kolten</td>
+<td style="text-align: left;">newberry, jake</td>
+<td style="text-align: right;">543939</td>
+<td style="text-align: right;">623470</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">line_drive</td>
+<td style="text-align: left;">center</td>
+<td style="text-align: left;">Slider</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">-0.12</td>
+<td style="text-align: right;">2.16</td>
+<td style="text-align: right;">82.2</td>
+<td style="text-align: right;">97.2</td>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">54097</td>
+<td style="text-align: left;">2020-08-23</td>
+<td style="text-align: left;">STL</td>
+<td style="text-align: left;">CIN</td>
+<td style="text-align: left;">CIN</td>
+<td style="text-align: left;">ervin, phil</td>
+<td style="text-align: left;">reyes, alex</td>
+<td style="text-align: right;">640447</td>
+<td style="text-align: right;">621052</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">fly_ball</td>
+<td style="text-align: left;">left</td>
+<td style="text-align: left;">4-Seam Fastball</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">-0.35</td>
+<td style="text-align: right;">3.46</td>
+<td style="text-align: right;">97.4</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">54</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+
+
 </div>
 </div>
-<p>You can add options to executable code like this</p>
 <div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 4</code></pre>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>parks <span class="sc">|&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>() <span class="sc">|&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="table table-hover table-striped caption-top table-sm small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">park</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">NAME</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Cover</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">LF_Dim</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">CF_Dim</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">RF_Dim</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">LF_W</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">CF_W</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">RF_W</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">Chase Field</td>
+<td style="text-align: left;">Roof</td>
+<td style="text-align: right;">328</td>
+<td style="text-align: right;">407</td>
+<td style="text-align: right;">335</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">8</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">SunTrust Park</td>
+<td style="text-align: left;">Outdoor</td>
+<td style="text-align: right;">335</td>
+<td style="text-align: right;">400</td>
+<td style="text-align: right;">325</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">16</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">Oriole Park at Camden Yards</td>
+<td style="text-align: left;">Outdoor</td>
+<td style="text-align: right;">333</td>
+<td style="text-align: right;">400</td>
+<td style="text-align: right;">318</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">21</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">Fenway Park</td>
+<td style="text-align: left;">Outdoor</td>
+<td style="text-align: right;">310</td>
+<td style="text-align: right;">390</td>
+<td style="text-align: right;">302</td>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">Wrigley Field</td>
+<td style="text-align: left;">Outdoor</td>
+<td style="text-align: right;">355</td>
+<td style="text-align: right;">400</td>
+<td style="text-align: right;">353</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">16</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">Great American Ballpark</td>
+<td style="text-align: left;">Outdoor</td>
+<td style="text-align: right;">328</td>
+<td style="text-align: right;">404</td>
+<td style="text-align: right;">325</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">8</td>
+</tr>
+</tbody>
+</table>
+
+
 </div>
 </div>
-<p>The <code>echo: false</code> option disables the printing of code (only output is displayed).</p>
+</section>
+<section id="joining-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="joining-the-data">Joining the Data</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>hits <span class="ot">&lt;-</span> hits <span class="sc">|&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(parks, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"park"</span> <span class="ot">=</span> <span class="st">"park"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
 </section>
 
 </main>
