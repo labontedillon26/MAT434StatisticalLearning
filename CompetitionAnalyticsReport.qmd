@@ -1,0 +1,84 @@
+---
+title: Competition Analytics Report
+author: 
+  - name: Dillon Labonte
+    email: dillon.labonte@snhu.edu
+    affiliations: 
+      - name: Southern New Hampshire University
+date: today
+date-format: long
+theme: lux
+toc: true
+code-fold: true
+warning: false
+message: false
+---
+
+```{r setup}
+# including necessary libraries
+library(tidyverse)
+library(tidymodels)
+library(patchwork)
+library(kableExtra)
+
+# styling
+options(kable_styling_bootstrap_options = c("hover", "striped"))
+theme_set(theme_bw(base_size = 14))
+
+# read in data
+data <- read_csv("data.csv")
+
+# split data into training, test, and validation sets
+set.seed(1234567890)
+data_splits <- initial_split(data, prop = 0.75)
+
+train <- training(data_splits)
+temp <- testing(data_splits)
+
+set.seed(11111)
+test_splits <- initial_split(temp, prop = 0.5)
+validation <- training(test_splits)
+test <- testing(test_splits)
+
+```
+
+```{r}
+
+data |>
+  head() |>
+  kable() |>
+  kable_styling()
+
+```
+
+
+## Statement of Purpose
+
+
+
+## Executive Summary
+
+
+
+## Introduction
+
+
+
+## Exploratory Data Analysis
+
+
+
+## Model Construction
+
+
+
+## Model Assessment
+
+
+
+## Conclusion
+
+
+
+## References
+
