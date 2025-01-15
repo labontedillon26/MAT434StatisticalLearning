@@ -21,7 +21,9 @@ message: false
 ```{r}
 
 library(tidyverse)
+library(tidymodels)
 library(kableExtra)
+library(skimr)
 
 # styling
 options(kable_styling_bootstrap_options = c("hover", "striped"))
@@ -63,4 +65,151 @@ hits <- hits |>
   left_join(parks, by = c("park" = "park"))
 
 ```
+
+We joined the `hits` and `parks` data together to obtain a full dataset with `r nrow(hits)` rows and `r ncol(hits)` columns.
+
+```{r}
+
+hits |>
+  head() |>
+  kable() |>
+  kable_styling()
+
+```
+
+```{r}
+
+hits |>
+  glimpse()
+
+```
+
+
+```{r}
+
+hits |>
+  skim() |>
+  kable() |>
+  kable_styling()
+
+```
+
+Split into training and test data.
+
+```{r}
+
+set.seed(434)
+data_splits <- initial_split(hits, prop = 0.85, strata = is_home_run)
+
+train <- training(data_splits)
+test <- testing(data_splits)
+
+```
+
+## Exploratory Data Analysis
+
+How and why do home runs happen?
+
+### Sometimes Useful Functionality
+
+Filtering rows
+
+```{r}
+
+train |>
+  filter(is_home_run == 1) |>
+  kable() |>
+  kable_styling()
+
+```
+
+```{r}
+
+train |>
+  filter(str_detect(NAME, "Fenway")) |>
+  kable() |>
+  kable_styling()
+
+```
+
+```{r}
+
+train |>
+  select(launch_speed, launch_angle, is_home_run) |>
+  kable() |>
+  kable_styling()
+
+```
+
+Building new variables from old ones (*Feature Engineering*)
+
+```{r}
+
+train <- train |>
+  mutate(fast_pitch = ifelse(pitch_mph > 100, "yes", "no"))
+
+```
+
+### Summary statistics 
+
+Home runs...
+
+```{r}
+
+train |>
+  count(is_home_run) |>
+  mutate(prop = 100 * n / sum(n)) |>
+  kable() |>
+  kable_styling()
+
+```
+
+```{r}
+
+train |>
+  summarize(pct_hr = 100 * mean(is_home_run)) |>
+  kable() |>
+  kable_styling()
+
+```
+
+Summarizing launch angle...
+
+```{r}
+
+train |>
+  filter(!is.na(launch_angle)) |>
+  summarize(
+    min_angle = min(launch_angle),
+    mean_angle = mean(launch_angle),
+    median_angle = median(launch_angle),
+    max_angle = max(launch_angle),
+    sd_angle = sd(launch_angle)
+  ) |>
+  kable() |>
+  kable_styling()
+
+```
+
+#### Grouped Summaries
+
+```{r}
+
+train |>
+  filter(!is.na(launch_angle)) |>
+  group_by(is_home_run) |>
+  summarize(
+    min_angle = min(launch_angle),
+    mean_angle = mean(launch_angle),
+    median_angle = median(launch_angle),
+    max_angle = max(launch_angle),
+    sd_angle = sd(launch_angle)
+  ) |>
+  kable() |>
+  kable_styling()
+
+```
+
+
+
 
