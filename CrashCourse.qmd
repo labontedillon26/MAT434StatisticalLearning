@@ -361,3 +361,26 @@ dt_cv_results |>
 
 ```
 
+Tuning our model...
+
+```{r}
+
+dt_spec <- decision_tree(tree_depth = tune()) |>
+  set_engine("rpart") |>
+  set_mode("classification")
+
+dt_wf <- workflow() |>
+  add_model(dt_spec) |>
+  add_recipe(dt_rec)
+
+dt_tune_results <- dt_wf |>
+  tune_grid(
+    resamples = train_folds,
+    grid = 10
+  )
+
+dt_tune_results |>
+  show_best(n = 10, metric = "accuracy")
+
+```
+
