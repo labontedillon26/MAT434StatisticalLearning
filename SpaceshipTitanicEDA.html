@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Adam Gilbert">
+<meta name="author" content="Adam Gilbert, Dillon Labonte">
 <meta name="dcterms.date" content="2023-09-15">
 
 <title>Spaceship Titanic Investigation</title>
@@ -127,6 +127,7 @@ window.Quarto = {
   <li><a href="#statistical-learning" id="toc-statistical-learning" class="nav-link" data-scroll-target="#statistical-learning">Statistical Learning</a></li>
   <li><a href="#machine-learning" id="toc-machine-learning" class="nav-link" data-scroll-target="#machine-learning">Machine Learning</a></li>
   </ul></li>
+  <li><a href="#support-vector-machine-model" id="toc-support-vector-machine-model" class="nav-link" data-scroll-target="#support-vector-machine-model">Support Vector Machine Model</a></li>
   <li><a href="#model-interpretation-and-inference" id="toc-model-interpretation-and-inference" class="nav-link" data-scroll-target="#model-interpretation-and-inference">Model Interpretation and Inference</a></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
@@ -146,7 +147,7 @@ window.Quarto = {
   <div class="quarto-title-meta-heading">Affiliation</div>
   
     <div class="quarto-title-meta-contents">
-    <p class="author">Adam Gilbert <a href="mailto:a.gilbert1@snhu.edu" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+    <p class="author">Adam Gilbert, Dillon Labonte <a href="mailto:a.gilbert1@snhu.edu" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
   </div>
   <div class="quarto-title-meta-contents">
         <p class="affiliation">
@@ -168,7 +169,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">February 10, 2025</p>
+      <p class="date-modified">February 16, 2025</p>
     </div>
   </div>
     
@@ -242,42 +243,27 @@ Note
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data <span class="sc">%&gt;%</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 8%">
-<col style="width: 8%">
-<col style="width: 7%">
-<col style="width: 4%">
-<col style="width: 9%">
-<col style="width: 2%">
-<col style="width: 2%">
-<col style="width: 8%">
-<col style="width: 7%">
-<col style="width: 9%">
-<col style="width: 3%">
-<col style="width: 5%">
-<col style="width: 12%">
-<col style="width: 8%">
-</colgroup>
+<table class="table table-hover table-striped caption-top table-sm small" data-quarto-postprocess="true">
 <thead>
 <tr class="header">
-<th style="text-align: left;">passenger_id</th>
-<th style="text-align: left;">home_planet</th>
-<th style="text-align: left;">cryo_sleep</th>
-<th style="text-align: left;">cabin</th>
-<th style="text-align: left;">destination</th>
-<th style="text-align: right;">age</th>
-<th style="text-align: left;">vip</th>
-<th style="text-align: right;">room_service</th>
-<th style="text-align: right;">food_court</th>
-<th style="text-align: right;">shopping_mall</th>
-<th style="text-align: right;">spa</th>
-<th style="text-align: right;">vr_deck</th>
-<th style="text-align: left;">name</th>
-<th style="text-align: left;">transported</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">passenger_id</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">home_planet</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">cryo_sleep</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">cabin</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">destination</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">vip</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">room_service</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">food_court</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">shopping_mall</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">spa</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">vr_deck</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">name</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">transported</th>
 </tr>
 </thead>
 <tbody>
@@ -379,6 +365,8 @@ Note
 </tr>
 </tbody>
 </table>
+
+
 </div>
 </div>
 <p>That data was split into a collection of 6954 training observations and 1739 test observations for validating our final model’s performance. Care was taken to ensure that the passengers who were <em>transported</em> to an alternate dimension are proportionally represented across the <em>training</em> and <em>test</em> sets.</p>
@@ -943,24 +931,18 @@ Statistical Learning versus Machine Learning
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>log_reg_fit <span class="sc">%&gt;%</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_fit_engine</span>() <span class="sc">%&gt;%</span></span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 38%">
-<col style="width: 16%">
-<col style="width: 14%">
-<col style="width: 16%">
-<col style="width: 14%">
-</colgroup>
+<table class="table table-hover table-striped caption-top table-sm small" data-quarto-postprocess="true">
 <thead>
 <tr class="header">
-<th style="text-align: left;">term</th>
-<th style="text-align: right;">estimate</th>
-<th style="text-align: right;">std.error</th>
-<th style="text-align: right;">statistic</th>
-<th style="text-align: right;">p.value</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">term</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.error</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">statistic</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p.value</th>
 </tr>
 </thead>
 <tbody>
@@ -1057,6 +1039,8 @@ Statistical Learning versus Machine Learning
 </tr>
 </tbody>
 </table>
+
+
 </div>
 </div>
 <p>Notice that all of the predictors are statistically significant (at the 5% significance threshold). The following are associated with a <em>higher</em> likelihood of interdimensional transport:</p>
@@ -1091,26 +1075,19 @@ On Feature (Predictor) Selection
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
 <span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">odds_ratio =</span> <span class="fu">exp</span>(estimate)</span>
 <span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 32%">
-<col style="width: 13%">
-<col style="width: 12%">
-<col style="width: 13%">
-<col style="width: 12%">
-<col style="width: 13%">
-</colgroup>
+<table class="table table-hover table-striped caption-top table-sm small" data-quarto-postprocess="true">
 <thead>
 <tr class="header">
-<th style="text-align: left;">term</th>
-<th style="text-align: right;">estimate</th>
-<th style="text-align: right;">std.error</th>
-<th style="text-align: right;">statistic</th>
-<th style="text-align: right;">p.value</th>
-<th style="text-align: right;">odds_ratio</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">term</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.error</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">statistic</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p.value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">odds_ratio</th>
 </tr>
 </thead>
 <tbody>
@@ -1220,6 +1197,8 @@ On Feature (Predictor) Selection
 </tr>
 </tbody>
 </table>
+
+
 </div>
 </div>
 <p>Note that, controlling for all other variables, an individual from <code>Europa</code> is nearly 10 times more likely than an individual from <code>Earth</code> to be transported to an alternate dimensions. Similarly, an individual from <code>Mars</code> is over twice as likely to be transported to an alternate dimension than a traveler from <code>Earth</code>. Again, controlling for all other variables, an individual engaging in <code>cryo_sleep</code> is over 3.5 times more likely to be transported to an alternate dimension during space travel (we should probably shut that system down!). Controlling for the other variables, individuals who are <code>vip</code>s or whose destinations are <code>PSO J318.5-22</code> or <code>Trappist-1e</code> carry slightly more than half the risk of those non-<code>vip</code> individuals or individuals travelling to <code>55 Cancri e</code>.</p>
@@ -1387,24 +1366,18 @@ Note
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>complex_log_reg_fit <span class="sc">%&gt;%</span></span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_fit_engine</span>() <span class="sc">%&gt;%</span></span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 43%">
-<col style="width: 14%">
-<col style="width: 13%">
-<col style="width: 14%">
-<col style="width: 13%">
-</colgroup>
+<table class="table table-hover table-striped caption-top table-sm small" data-quarto-postprocess="true">
 <thead>
 <tr class="header">
-<th style="text-align: left;">term</th>
-<th style="text-align: right;">estimate</th>
-<th style="text-align: right;">std.error</th>
-<th style="text-align: right;">statistic</th>
-<th style="text-align: right;">p.value</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">term</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.error</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">statistic</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p.value</th>
 </tr>
 </thead>
 <tbody>
@@ -1515,6 +1488,8 @@ Note
 </tr>
 </tbody>
 </table>
+
+
 </div>
 </div>
 <p>Notice that there are new model terms – <code>food_court_x_home_planet_Europa</code> and <code>food_court_x_home_planet_Mars</code>. These are the terms that allow for the effect of <code>food_court</code> spending on probability of interdimensional transport to depend on <code>home_planet</code>. Both of these new terms are statistically significant, indicating that the association between <code>food_court</code> spending on the probability of interdimensional transport is dependent (should be adjusted for) <code>home_planet</code>. Below is how we can visualize the marginal effects of <code>food_court</code> spending, accounting for differences across <code>home_planet</code>.</p>
@@ -1659,7 +1634,7 @@ Prediction   no  yes
 <pre><code>There were issues with some computations   A: x1</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>There were issues with some computations   A: x6</code></pre>
+<pre><code>There were issues with some computations   A: x5</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>There were issues with some computations   A: x10</code></pre>
@@ -1734,11 +1709,270 @@ Results of Cross-Validation
 </section>
 </section>
 </section>
+<section id="support-vector-machine-model" class="level2">
+<h2 class="anchored" data-anchor-id="support-vector-machine-model">Support Vector Machine Model</h2>
+<p>Let’s build and tune a support vector machine model using radial basis functions. The metric we are interested in is recall, since we want to accurately be able to flag a passenger that would likely be transported to an alternate dimension.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>svm_rbf_spec <span class="ot">&lt;-</span> <span class="fu">svm_rbf</span>(<span class="at">cost =</span> <span class="fu">tune</span>(), <span class="at">rbf_sigma =</span> <span class="fu">tune</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"kernlab"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>svm_rbf_rec <span class="ot">&lt;-</span> <span class="fu">recipe</span>(transported <span class="sc">~</span> ., <span class="at">data =</span> train) <span class="sc">%&gt;%</span></span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_rm</span>(passenger_id) <span class="sc">%&gt;%</span></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_rm</span>(name) <span class="sc">%&gt;%</span></span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_rm</span>(cabin) <span class="sc">%&gt;%</span></span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_impute_median</span>(<span class="fu">all_numeric_predictors</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_impute_mode</span>(<span class="fu">all_nominal_predictors</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_dummy</span>(<span class="fu">all_nominal_predictors</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_normalize</span>(<span class="fu">all_numeric_predictors</span>())</span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>svm_rbf_wf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(svm_rbf_spec) <span class="sc">%&gt;%</span></span>
+<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(svm_rbf_rec)</span>
+<span id="cb43-17"><a href="#cb43-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-18"><a href="#cb43-18" aria-hidden="true" tabindex="-1"></a>svm_rbf_grid <span class="ot">&lt;-</span> <span class="fu">grid_regular</span>(</span>
+<span id="cb43-19"><a href="#cb43-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rbf_sigma</span>(),</span>
+<span id="cb43-20"><a href="#cb43-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cost</span>(),</span>
+<span id="cb43-21"><a href="#cb43-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">levels =</span> <span class="dv">5</span></span>
+<span id="cb43-22"><a href="#cb43-22" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb43-23"><a href="#cb43-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-24"><a href="#cb43-24" aria-hidden="true" tabindex="-1"></a>n_cores <span class="ot">&lt;-</span> parallel<span class="sc">::</span><span class="fu">detectCores</span>()</span>
+<span id="cb43-25"><a href="#cb43-25" aria-hidden="true" tabindex="-1"></a>cluster <span class="ot">&lt;-</span> parallel<span class="sc">::</span><span class="fu">makeCluster</span>(n_cores <span class="sc">-</span> <span class="dv">1</span>, <span class="at">type =</span> <span class="st">"PSOCK"</span>)</span>
+<span id="cb43-26"><a href="#cb43-26" aria-hidden="true" tabindex="-1"></a>doParallel<span class="sc">::</span><span class="fu">registerDoParallel</span>(cluster)</span>
+<span id="cb43-27"><a href="#cb43-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-28"><a href="#cb43-28" aria-hidden="true" tabindex="-1"></a>tictoc<span class="sc">::</span><span class="fu">tic</span>()</span>
+<span id="cb43-29"><a href="#cb43-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-30"><a href="#cb43-30" aria-hidden="true" tabindex="-1"></a>svm_rbf_tune_results <span class="ot">&lt;-</span> svm_rbf_wf <span class="sc">%&gt;%</span></span>
+<span id="cb43-31"><a href="#cb43-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tune_bayes</span>(</span>
+<span id="cb43-32"><a href="#cb43-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">grid =</span> svm_rbf_grid,</span>
+<span id="cb43-33"><a href="#cb43-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">resamples =</span> train_folds,</span>
+<span id="cb43-34"><a href="#cb43-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">metrics =</span> <span class="fu">metric_set</span>(recall)</span>
+<span id="cb43-35"><a href="#cb43-35" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb43-36"><a href="#cb43-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-37"><a href="#cb43-37" aria-hidden="true" tabindex="-1"></a>parallel<span class="sc">::</span><span class="fu">stopCluster</span>(cluster)</span>
+<span id="cb43-38"><a href="#cb43-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-39"><a href="#cb43-39" aria-hidden="true" tabindex="-1"></a>tictoc<span class="sc">::</span><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Let’s look at the 10 best models from this tuning process.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co">#save(svm_rbf_tune_results, svm_rbf_wf, file = "svm_rbf_tune_results.RData")</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"svm_rbf_tune_results.RData"</span>)</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>svm_rbf_tune_results <span class="sc">%&gt;%</span></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">show_best</span>(<span class="at">n =</span> <span class="dv">10</span>, <span class="at">metric =</span> <span class="st">"recall"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="table table-hover table-striped caption-top table-sm small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">cost</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">rbf_sigma</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">.metric</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">.estimator</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">mean</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">n</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std_err</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">.config</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.0131390</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.8777423</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0067195</td>
+<td style="text-align: left;">Preprocessor1_Model10</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">32.0000000</td>
+<td style="text-align: right;">0.0000100</td>
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.8673126</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0062478</td>
+<td style="text-align: left;">Preprocessor1_Model23</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.1767767</td>
+<td style="text-align: right;">0.0031623</td>
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.8623892</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0061762</td>
+<td style="text-align: left;">Preprocessor1_Model14</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2.3784142</td>
+<td style="text-align: right;">0.0031623</td>
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.8395049</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0064013</td>
+<td style="text-align: left;">Preprocessor1_Model19</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.1767767</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.8215414</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0076969</td>
+<td style="text-align: left;">Preprocessor1_Model15</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2.3784142</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.7679476</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0092639</td>
+<td style="text-align: left;">Preprocessor1_Model20</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">32.0000000</td>
+<td style="text-align: right;">0.0031623</td>
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.7630292</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0074158</td>
+<td style="text-align: left;">Preprocessor1_Model24</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">32.0000000</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.7326112</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0078278</td>
+<td style="text-align: left;">Preprocessor1_Model25</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.0131390</td>
+<td style="text-align: right;">0.0031623</td>
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.1599062</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0072234</td>
+<td style="text-align: left;">Preprocessor1_Model09</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2.3784142</td>
+<td style="text-align: right;">0.0000100</td>
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.0176745</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0018581</td>
+<td style="text-align: left;">Preprocessor1_Model18</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>Let’s fit the best model to our training data, and see what our recall metric is.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>best_svm_rbf <span class="ot">&lt;-</span> svm_rbf_tune_results <span class="sc">%&gt;%</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select_best</span>(<span class="at">metric =</span> <span class="st">"recall"</span>)</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>svm_rbf_wf_final <span class="ot">&lt;-</span> svm_rbf_wf <span class="sc">%&gt;%</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">finalize_workflow</span>(best_svm_rbf)</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>svm_rbf_fit <span class="ot">&lt;-</span> svm_rbf_wf_final <span class="sc">%&gt;%</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(train)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>svm_rbf_fit <span class="sc">|&gt;</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">augment</span>(train) <span class="sc">|&gt;</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">recall</span>(.pred_class, transported) <span class="sc">|&gt;</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="table table-hover table-striped caption-top table-sm small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">.metric</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">.estimator</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">.estimate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.6795073</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>We see a recall of 0.68 which is not very good, and is also not close to the results from the hyperparameter tuning. I’m not quite sure what is going on here, and will require some more attention to resolve.</p>
+<p>Regardless, let’s see how this model does on the test set.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>svm_rbf_fit <span class="sc">|&gt;</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">augment</span>(test) <span class="sc">|&gt;</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">recall</span>(.pred_class, transported) <span class="sc">|&gt;</span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="table table-hover table-striped caption-top table-sm small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">.metric</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">.estimator</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">.estimate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">recall</td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: right;">0.6568202</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>As expected, this model did a little bit worse on the test set. This is also quite a bit worse than what we saw from the best logistic regression model, without using hyperparameter tuning. This indicates that we should not trust this support vector machine model to make accurate predictions about our passengers probability of getting transported to an alternate dimension.</p>
+</section>
 <section id="model-interpretation-and-inference" class="level2">
 <h2 class="anchored" data-anchor-id="model-interpretation-and-inference">Model Interpretation and Inference</h2>
 </section>
 <section id="conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>In this notebook, we have begun exploration into classification models, different model classes, and reasons to use each model class. We explored two binary classifiers, logistic regression and support vector machines, which come in handy when we need to know if an observation belongs to one of two classes. We also explored performance metrics that are useful for classification, such as accuracy, precision, and recall. These metrics will be used throughout this course.</p>
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>

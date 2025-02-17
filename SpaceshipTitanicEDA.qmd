@@ -1,7 +1,7 @@
 ---
 title: Spaceship Titanic Investigation
 author: 
-  - name: Adam Gilbert
+  - name: Adam Gilbert, Dillon Labonte
     email: a.gilbert1@snhu.edu
     affiliations: 
       - name: Southern New Hampshire University
@@ -68,7 +68,8 @@ The original data set on the passengers contained `r data %>% nrow()` passengers
 ```{r}
 data %>%
   head() %>%
-  kable()
+  kable() |>
+  kable_styling()
 ```
 
 That data was split into a collection of `r train %>% nrow()` training observations and `r test %>% nrow()` test observations for validating our final model's performance. Care was taken to ensure that the passengers who were *transported* to an alternate dimension are proportionally represented across the *training* and *test* sets.
@@ -465,7 +466,8 @@ Now that we've got the fitted model, we can see the estimated model coefficients
 log_reg_fit %>%
   extract_fit_engine() %>%
   tidy() %>%
-  kable()
+  kable() |>
+  kable_styling()
 ```
 
 Notice that all of the predictors are statistically significant (at the 5% significance threshold). The following are associated with a *higher* likelihood of interdimensional transport:
@@ -491,7 +493,8 @@ log_reg_fit %>%
   mutate(
     odds_ratio = exp(estimate)
   ) %>%
-  kable()
+  kable() |>
+  kable_styling()
 ```
 
 Note that, controlling for all other variables, an individual from `Europa` is nearly 10 times more likely than an individual from `Earth` to be transported to an alternate dimensions. Similarly, an individual from `Mars` is over twice as likely to be transported to an alternate dimension than a traveler from `Earth`. Again, controlling for all other variables, an individual engaging in `cryo_sleep` is over 3.5 times more likely to be transported to an alternate dimension during space travel (we should probably shut that system down!). Controlling for the other variables, individuals who are `vip`s or whose destinations are `PSO J318.5-22` or `Trappist-1e` carry slightly more than half the risk of those non-`vip` individuals or individuals travelling to `55 Cancri e`.
@@ -620,7 +623,8 @@ complex_log_reg_fit <- complex_log_reg_wf %>%
 complex_log_reg_fit %>%
   extract_fit_engine() %>%
   tidy() %>%
-  kable()
+  kable() |>
+  kable_styling()
 ```
 
 Notice that there are new model terms -- `food_court_x_home_planet_Europa` and `food_court_x_home_planet_Mars`. These are the terms that allow for the effect of `food_court` spending on probability of interdimensional transport to depend on `home_planet`. Both of these new terms are statistically significant, indicating that the association between `food_court` spending on the probability of interdimensional transport is dependent (should be adjusted for) `home_planet`. Below is how we can visualize the marginal effects of `food_court` spending, accounting for differences across `home_planet`.
@@ -742,75 +746,115 @@ Notice that the average recall over the ten cross-validation folds was around 77
 The result of running `fit_resamples()` is a collection of performance metrics. We do not have a *fitted model* that can be used to make predictions until we `fit()` our model to its training data.
 :::
 
-#### Hyperparameter Tuning
+## Support Vector Machine Model
 
-```{r}
+Let's build and tune a support vector machine model using radial basis functions. The metric we are interested in is recall, since we want to accurately be able to flag a passenger that would likely be transported to an alternate dimension.
 
-log_reg_spec <- logistic_reg(penalty = tune(), mixture = tune()) |>
-  set_engine("glmnet") |>
+```{r tuning}
+#| eval: false
+
+svm_rbf_spec <- svm_rbf(cost = tune(), rbf_sigma = tune()) %>%
+  set_engine("kernlab") %>%
   set_mode("classification")
 
-log_reg_tune_rec <- log_reg_rec |> #grabbing old recipe
+svm_rbf_rec <- recipe(transported ~ ., data = train) %>%
+  step_rm(passenger_id) %>%
+  step_rm(name) %>%
+  step_rm(cabin) %>%
+  step_impute_median(all_numeric_predictors()) %>%
+  step_impute_mode(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors()) |>
   step_normalize(all_numeric_predictors())
 
-log_reg_tune_wf <- workflow() |>
-  add_model(log_reg_spec) |>
-  add_recipe(log_reg_tune_rec)
+svm_rbf_wf <- workflow() %>%
+  add_model(svm_rbf_spec) %>%
+  add_recipe(svm_rbf_rec)
 
-```
+svm_rbf_grid <- grid_regular(
+  rbf_sigma(),
+  cost(),
+  levels = 5
+)
 
-Tuning our `penalty` and `mixture` hyperparameters.
+n_cores <- parallel::detectCores()
+cluster <- parallel::makeCluster(n_cores - 1, type = "PSOCK")
+doParallel::registerDoParallel(cluster)
 
-```{r}
+tictoc::tic()
 
-# param_grid <- crossing(
-#   penalty = c(0.1, 1, 10, 100),
-#   mixture = seq(0, 1, by = 0.1)
-# )
-# 
-# param_grid
-
-library(tictoc)
-
-tic()
-
-log_reg_tune_results <- log_reg_tune_wf |>
-  tune_grid(
-    resamples = train_folds,
-    grid = 12, #space filling points in hyperparameter space
-    metrics = metric_set(accuracy, precision, recall)
-  )
-
-toc()
-
-log_reg_tune_results |>
-  show_best(n = 10, metric = "recall")
-
-```
-
-```{r}
-
-tic()
-
-log_reg_seq_tune_results <- log_reg_tune_wf |>
+svm_rbf_tune_results <- svm_rbf_wf %>%
   tune_bayes(
+    grid = svm_rbf_grid,
     resamples = train_folds,
-    iter = 20,
-    metrics = metric_set(recall),
-    initial = log_reg_tune_results
+    metrics = metric_set(recall)
   )
 
-toc()
+parallel::stopCluster(cluster)
 
-log_reg_seq_tune_results |>
-  show_best(n = 10)
+tictoc::toc()
 
 ```
 
+Let's look at the 10 best models from this tuning process.
+
+```{r}
+
+#save(svm_rbf_tune_results, svm_rbf_wf, file = "svm_rbf_tune_results.RData")
+load("svm_rbf_tune_results.RData")
+
+svm_rbf_tune_results %>%
+  show_best(n = 10, metric = "recall") |>
+  kable() |>
+  kable_styling()
+
+```
+
+Let's fit the best model to our training data, and see what our recall metric is.
+
+```{r}
+
+best_svm_rbf <- svm_rbf_tune_results %>%
+  select_best(metric = "recall")
+
+svm_rbf_wf_final <- svm_rbf_wf %>%
+  finalize_workflow(best_svm_rbf)
+
+svm_rbf_fit <- svm_rbf_wf_final %>%
+  fit(train)
+
+```
+
+```{r}
+
+svm_rbf_fit |>
+  augment(train) |>
+  recall(.pred_class, transported) |>
+  kable() |>
+  kable_styling()
+
+```
+
+We see a recall of 0.68 which is not very good, and is also not close to the results from the hyperparameter tuning. I'm not quite sure what is going on here, and will require some more attention to resolve.
+
+Regardless, let's see how this model does on the test set.
+
+```{r}
+
+svm_rbf_fit |>
+  augment(test) |>
+  recall(.pred_class, transported) |>
+  kable() |>
+  kable_styling()
+
+```
+
+As expected, this model did a little bit worse on the test set. This is also quite a bit worse than what we saw from the best logistic regression model, without using hyperparameter tuning. This indicates that we should not trust this support vector machine model to make accurate predictions about our passengers probability of getting transported to an alternate dimension.
 
 ## Model Interpretation and Inference
 
 ## Conclusion
+
+In this notebook, we have begun exploration into classification models, different model classes, and reasons to use each model class. We explored two binary classifiers, logistic regression and support vector machines, which come in handy when we need to know if an observation belongs to one of two classes. We also explored performance metrics that are useful for classification, such as accuracy, precision, and recall. These metrics will be used throughout this course. 
 
 ## References
 
