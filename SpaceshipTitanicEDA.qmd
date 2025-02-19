@@ -43,6 +43,7 @@ data_splits <- initial_split(data, prop = 0.8, strata = transported)
 
 train <- training(data_splits)
 test <- testing(data_splits)
+
 ```
 
 ## Statement of Purpose

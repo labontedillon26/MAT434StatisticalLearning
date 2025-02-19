@@ -1,0 +1,96 @@
+---
+title: "Dimension Reduction Principal Components Analysis"
+author:
+  - name: Dillon Labonte
+    email: dillon.labonte@snhu.edu
+    affiliations:
+      - name: Southern New Hampshire University
+format: html
+date: 2/19/2025
+date-modified: today
+date-format: long
+theme: flatly
+toc: true
+code-fold: true
+message: false
+warning: false
+---
+
+```{r}
+
+library(tidyverse)
+library(tidymodels)
+library(ggforce)
+
+# styling
+options(kable_styling_bootstrap_options = c("hover", "striped"))
+theme_set(theme_bw(base_size = 14))
+
+data <- read_csv("https://raw.githubusercontent.com/agmath/agmath.github.io/master/data/classification/cancer_gene_expression_data.csv")
+
+set.seed(123)
+data_splits <- initial_split(data, prop = 0.75)
+
+train <- training(data_splits)
+test <- testing(data_splits)
+
+```
+
+```{r}
+
+train |>
+  names() |>
+  tail()
+
+train |>
+  count(labels)
+
+```
+
+```{r}
+
+train %>%
+  select(1:5, 2502) %>%
+    ggplot(aes(x = .panel_x, y = .panel_y, color = labels, fill = labels)) +
+    geom_point() +
+    geom_autodensity(alpha = .3) +
+    facet_matrix(vars(-labels), layer.diag = 2) + 
+    scale_color_brewer(palette = "Dark2") + 
+    scale_fill_brewer(palette = "Dark2")
+
+```
+
+```{r}
+
+pca_rec <- recipe(labels ~ ., data = train) |>
+  step_zv(all_predictors()) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_impute_knn(all_nominal_predictors()) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), num_comp = 5)
+
+pca_rec |>
+  prep() |>
+  tidy(number = 5, type = 'variance') |>
+  filter(terms == 'percent variance') |>
+  mutate(total_variance = cumsum(value))
+
+train_baked <- pca_rec |>
+  prep() |>
+  bake(train)
+
+```
+
+```{r}
+
+train_baked %>%
+  ggplot(aes(x = .panel_x, y = .panel_y, color = labels, fill = labels)) +
+  geom_point() +
+  geom_autodensity(alpha = .3) +
+  facet_matrix(vars(-labels), layer.diag = 2) + 
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2")
+
+```
+
+
