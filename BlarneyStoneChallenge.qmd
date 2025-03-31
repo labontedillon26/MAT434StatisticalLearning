@@ -1,0 +1,256 @@
+---
+title: Blarney Stone Challenge
+author: 
+  - name: Dillon Labonte
+    email: dillon.labonte@snhu.edu
+    affiliations: 
+      - name: Southern New Hampshire University
+date: today
+date-format: long
+theme: lux
+toc: true
+code-fold: true
+warning: false
+message: false
+---
+
+```{r}
+# including necessary libraries
+library(tidyverse)
+library(tidymodels)
+library(patchwork)
+library(kableExtra)
+library(ggmosaic)
+
+# styling
+options(kable_styling_bootstrap_options = c("hover", "striped"))
+theme_set(theme_bw(base_size = 14))
+
+unregister <- function() {
+  env <- foreach:::.foreachGlobals
+  rm(list=ls(name=env), pos=env)
+}
+
+data <- read_csv("https://raw.githubusercontent.com/agmath/agmath.github.io/refs/heads/master/data/classification/blarney_data.csv")
+
+comp <- read_csv("https://raw.githubusercontent.com/agmath/agmath.github.io/refs/heads/master/data/classification/blarney_comp.csv")
+
+data <- data |>
+  mutate(kissed = as.factor(kissed))
+
+data_folds <- vfold_cv(data, v = 10, strata = kissed)
+
+my_metrics <- metric_set(accuracy, mn_log_loss)
+
+```
+
+```{r}
+
+rf_spec <- rand_forest() |>
+  set_mode("classification")
+
+rf_rec <- recipe(kissed ~ ., data = data) |>
+  step_rm("id") |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors()) |>
+  step_dummy(all_nominal_predictors())
+
+rf_wf <- workflow() |>
+  add_model(rf_spec) |>
+  add_recipe(rf_rec)
+
+rf_cv_results <- rf_wf |>
+  fit_resamples(
+    resamples = data_folds,
+    metrics = my_metrics
+  )
+
+```
+
+```{r}
+
+best_rf <- rf_cv_results |>
+  select_best(metric = "mn_log_loss")
+
+rf_wf_final <- rf_wf %>%
+  finalize_workflow(best_rf)
+
+rf_fit <- rf_wf_final %>%
+  fit(data)
+
+rf_fit |>
+  augment(data) |>
+  mn_log_loss(kissed, .pred_yes)
+
+```
+
+```{r}
+
+my_submission <- rf_fit %>%
+  augment(comp) %>%
+  rename(kissed = .pred_yes) %>%
+  select(id, kissed)
+
+write.csv(my_submission, "submissionJoshAndDillon.csv", row.names = FALSE)
+
+```
+
+```{r}
+
+lr_spec <- logistic_reg(penalty = tune(), mixture = tune()) |>
+  set_engine("glmnet") |>
+  set_mode("classification")
+
+lr_rec <- recipe(kissed ~ ., data = data) |>
+  step_rm("id") |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors()) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_normalize(all_numeric_predictors())
+
+lr_wf <- workflow() |>
+  add_model(lr_spec) |>
+  add_recipe(lr_rec)
+
+# lr_fit <- lr_wf |>
+#   fit(data)
+
+# lr_cv_results <- lr_wf |>
+#   fit_resamples(
+#     resamples = data_folds,
+#     metrics = my_metrics
+#   )
+
+```
+
+```{r}
+
+n_cores <- parallel::detectCores()
+cl <- parallel::makeCluster(n_cores - 1, type = "PSOCK")
+doParallel::registerDoParallel(cl)
+
+tictoc::tic()
+
+lr_tune_results <- lr_wf %>%
+  tune_bayes(
+    resamples = data_folds,
+    metrics = metric_set(mn_log_loss),
+    initial = 10,
+    control = control_bayes(parallel_over = "everything")
+  )
+
+tictoc::toc()
+
+doParallel::stopImplicitCluster()
+unregister()
+
+```
+
+
+```{r}
+
+best_lr <- lr_tune_results |>
+  select_best(metric = "mn_log_loss")
+
+lr_wf_final <- lr_wf %>%
+  finalize_workflow(best_lr)
+
+lr_fit <- lr_wf_final %>%
+  fit(data)
+
+lr_fit |>
+  augment(data) |>
+  mn_log_loss(kissed, .pred_yes)
+
+```
+
+```{r}
+
+my_submission <- lr_fit %>%
+  augment(comp) %>%
+  rename(kissed = .pred_yes) %>%
+  select(id, kissed)
+
+write.csv(my_submission, "submissionJoshAndDillon.csv", row.names = FALSE)
+
+```
+
+```{r}
+
+svm_spec <- svm_rbf(rbf_sigma = tune(), cost = tune(), margin = tune()) |>
+  set_mode("classification")
+
+svm_rec <- recipe(kissed ~ ., data = data) |>
+  step_rm("id") |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors()) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_normalize(all_numeric_predictors())
+
+svm_wf <- workflow() |>
+  add_model(svm_spec) |>
+  add_recipe(svm_rec)
+
+# svm_fit <- svm_wf |>
+#   fit(data)
+
+# lr_cv_results <- lr_wf |>
+#   fit_resamples(
+#     resamples = data_folds,
+#     metrics = my_metrics
+#   )
+
+```
+
+```{r}
+
+n_cores <- parallel::detectCores()
+cl <- parallel::makeCluster(n_cores - 1, type = "PSOCK")
+doParallel::registerDoParallel(cl)
+
+tictoc::tic()
+
+svm_tune_results <- svm_wf %>%
+  tune_bayes(
+    resamples = data_folds,
+    metrics = metric_set(mn_log_loss),
+    initial = 5,
+    control = control_bayes(parallel_over = "everything")
+  )
+
+tictoc::toc()
+
+doParallel::stopImplicitCluster()
+unregister()
+
+```
+
+
+```{r}
+
+best_svm <- svm_tune_results |>
+  select_best(metric = "mn_log_loss")
+
+svm_wf_final <- svm_wf %>%
+  finalize_workflow(best_svm)
+
+svm_fit <- svm_wf_final %>%
+  fit(data)
+
+svm_fit |>
+  augment(data) |>
+  mn_log_loss(kissed, .pred_yes)
+
+```
+
+```{r}
+
+my_submission <- svm_fit %>%
+  augment(comp) %>%
+  rename(kissed = .pred_yes) %>%
+  select(id, kissed)
+
+write.csv(my_submission, "submissionJoshAndDillon.csv", row.names = FALSE)
+
+```
+

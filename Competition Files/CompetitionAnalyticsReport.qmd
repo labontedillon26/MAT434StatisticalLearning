@@ -28,6 +28,14 @@ theme_set(theme_bw(base_size = 14))
 
 # read in data
 data <- read_csv("data.csv")
+comp <- read_csv("comp.csv")
+
+data <- data |>
+  mutate(priceRange = as.factor(priceRange)) |>
+  mutate(hasSpa = as.factor(hasSpa))
+
+comp <- comp |>
+  mutate(hasSpa = as.factor(hasSpa))
 
 # split data into training, test, and validation sets
 set.seed(1234567890)
@@ -35,6 +43,15 @@ data_splits <- initial_split(data, prop = 0.75)
 
 train <- training(data_splits)
 test <- testing(data_splits)
+
+unregister <- function() {
+  env <- foreach:::.foreachGlobals
+  rm(list=ls(name=env), pos=env)
+}
+
+train_folds <- vfold_cv(train, v = 10)
+
+my_metrics <- metric_set(accuracy, mn_log_loss)
 
 ```
 
@@ -188,7 +205,645 @@ This exploratory data analysis helps us to visualize our data and spot initial t
 
 ## Model Construction
 
+In this section we will explore various model classes and compare their performances across different procedures such as cross-validation and hyperparameter tuning. It is required to use a multiclass classifier for this data set, rather than a binary classifier, so logistic regression and support vector machines will not be considered.
 
+### KNN Model
+
+We begin our model construction with a nearest neighbor model. 
+
+#### Without Cross Validation or Hyperparameter Tuning
+
+The first nearest neighbor model we build will be used as a baseline, without any cross validation or hyperparameter tuning.
+
+```{r}
+
+knn_spec <- nearest_neighbor() |>
+  set_mode("classification")
+
+knn_rec <- recipe(priceRange ~ ., data = train) |>
+  step_rm(c("id", "city", "description", "homeType", "hasSpa")) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_normalize(all_numeric_predictors())
+
+knn_wf <- workflow() |>
+  add_model(knn_spec) |>
+  add_recipe(knn_rec)
+
+knn_fit <- knn_wf |>
+  fit(train)
+
+```
+
+```{r}
+
+knn_log_loss <- knn_fit |>
+  augment(train) |>
+  mn_log_loss(priceRange, starts_with(".pred"), - .pred_class)
+
+knn_accuracy <- knn_fit |>
+  augment(train) |>
+  accuracy(priceRange, .pred_class)
+
+knn_log_loss |>
+  bind_rows(knn_accuracy) |>
+  kable() |>
+  kable_styling()
+
+```
+This baseline nearest neighbor model shows a multiclass log loss of $0.36$ and an accuracy of $94 \%$. This seems quite hopeful, but cross validation will give us a better feeling of how our model is performing.
+
+#### With Cross Validation
+
+We next use cross validation to fit a nearest neighbor onto $5$ folds.
+
+```{r}
+
+knn_cv_spec <- nearest_neighbor() |>
+  set_mode("classification")
+
+knn_cv_rec <- recipe(priceRange ~ ., data = train) |>
+  step_rm(c("id", "city", "description", "homeType", "hasSpa")) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_normalize(all_numeric_predictors())
+
+knn_cv_wf <- workflow() |>
+  add_model(knn_cv_spec) |>
+  add_recipe(knn_cv_rec)
+
+```
+
+```{r}
+#| eval: false
+
+knn_cv_results <- knn_cv_wf |>
+  fit_resamples(
+    resamples = train_folds,
+    metrics = my_metrics
+  )
+
+```
+
+
+```{r}
+#save(knn_cv_results, knn_cv_wf, file = "knn_cv_results.RData")
+load("knn_cv_results.RData")
+
+knn_cv_results |>
+  collect_metrics() |>
+  kable() |>
+  kable_styling()
+
+```
+
+From cross validation, we see more realistic estimates of our model's accuracy and multiclass log loss. Here, we see a multiclass log loss of $6.06$ and an accuracy of $49 \%$, which is quite a bit worse than the original model.
+
+#### With Hyperparameter Tuning
+
+Next we build a nearest neighbor model using hyperparameter tuning. We start by tuning only hyperparameter, `neighbors`, to see if we get an improvement.
+
+```{r}
+
+knn_tune_spec <- nearest_neighbor(neighbors = tune()) |>
+  set_mode("classification")
+
+knn_tune_rec <- recipe(priceRange ~ ., data = train) |>
+  step_rm(c("id", "city", "description", "homeType", "hasSpa")) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_normalize(all_numeric_predictors())
+
+knn_tune_wf <- workflow() |>
+  add_model(knn_tune_spec) |>
+  add_recipe(knn_tune_rec)
+
+```
+
+```{r}
+#| eval: false
+
+n_cores <- parallel::detectCores()
+cl <- parallel::makeCluster(n_cores - 1, type = "PSOCK")
+doParallel::registerDoParallel(cl)
+
+tictoc::tic()
+
+knn_tune_results <- knn_tune_wf %>%
+  tune_bayes(
+    resamples = train_folds,
+    metrics = metric_set(mn_log_loss),
+    initial = 5,
+    control = control_bayes(parallel_over = "everything")
+  )
+
+tictoc::toc()
+
+doParallel::stopImplicitCluster()
+unregister()
+
+```
+
+```{r}
+#save(knn_tune_results, knn_tune_wf, file = "knn_tune_results.RData")
+load("knn_tune_results.RData")
+
+knn_tune_results %>%
+  show_best(n = 10, metric = "mn_log_loss") |>
+  kable() |>
+  kable_styling()
+
+```
+
+From cross validation, we get a mean multi class log loss of $2.11$! This is much better than the model built using cross validation. We could continue to tune this model over more hyperparameters, however we will find greater improvements by moving onto a different model class.
+
+### Decision Tree Model
+
+For this model class we turn our attention to the decision tree. This is a powerful multiclass classifier that will be the basis of our ensemble models in the next two sections.
+
+#### Without Cross Validation or Hyperparameter Tuning
+
+Like the nearest neighbor model, we want to see how a decision tree model does on the data as a baseline.
+
+```{r}
+
+dt_spec <- decision_tree() |>
+  set_mode("classification")
+
+dt_rec <- recipe(priceRange ~ ., data = train) |>
+  step_rm(c("id", "description")) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors()) |>
+  step_other(all_nominal_predictors())
+
+dt_wf <- workflow() |>
+  add_model(dt_spec) |>
+  add_recipe(dt_rec)
+
+dt_fit <- dt_wf |>
+  fit(train)
+
+```
+
+```{r}
+
+dt_log_loss <- dt_fit |>
+  augment(train) |>
+  mn_log_loss(priceRange, starts_with(".pred"), - .pred_class)
+
+dt_accuracy <- dt_fit |>
+  augment(train) |>
+  accuracy(priceRange, .pred_class)
+
+dt_log_loss |>
+  bind_rows(dt_accuracy) |>
+  kable() |>
+  kable_styling()
+
+```
+
+Similar to the nearest neighbor model, this baseline model is extremely hopeful and might not actually be capturing the performance of our model. Here, we see a multiclass log loss of $1.32$ and an accuracy of $44 \%$.
+
+#### With Cross Validation
+
+We'll fit a decision tree model using cross validation to get a better idea of our model's performance.
+
+```{r}
+
+dt_cv_spec <- decision_tree() |>
+  set_mode("classification")
+
+dt_cv_rec <- recipe(priceRange ~ ., data = train) |>
+  step_rm(c("id", "description")) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors()) |>
+  step_other(all_nominal_predictors())
+
+dt_cv_wf <- workflow() |>
+  add_model(dt_cv_spec) |>
+  add_recipe(dt_cv_rec)
+
+```
+
+```{r}
+#| eval: false
+
+dt_cv_results <- dt_cv_wf |>
+  fit_resamples(
+    resamples = train_folds,
+    metrics = my_metrics
+  )
+
+```
+
+
+```{r}
+#save(dt_cv_results, dt_cv_wf, file = "dt_cv_results.RData")
+load("dt_cv_results.RData")
+
+dt_cv_results |>
+  collect_metrics() |>
+  kable() |>
+  kable_styling()
+
+```
+
+The results from cross validation show a mean multiclass log loss of $1.33$ and an accuracy of $43 \%$. These metrics are only slightly worse than the baseline model.
+
+#### With Hyperparameter Tuning
+
+We will tune the `tree_depth` hyperparamater and observe the effect on the results.
+
+```{r}
+
+dt_tune_spec <- decision_tree(tree_depth = tune()) |>
+  set_mode("classification")
+
+dt_tune_rec <- recipe(priceRange ~ ., data = train) |>
+  step_rm(c("id", "description")) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors()) |>
+  step_other(all_nominal_predictors())
+
+dt_tune_wf <- workflow() |>
+  add_model(dt_tune_spec) |>
+  add_recipe(dt_tune_rec)
+
+```
+
+```{r}
+#| eval: false
+
+n_cores <- parallel::detectCores()
+cl <- parallel::makeCluster(n_cores - 1, type = "PSOCK")
+doParallel::registerDoParallel(cl)
+
+tictoc::tic()
+
+dt_tune_results <- dt_tune_wf %>%
+  tune_bayes(
+    resamples = train_folds,
+    metrics = metric_set(mn_log_loss),
+    initial = 5,
+    control = control_bayes(parallel_over = "everything")
+  )
+
+tictoc::toc()
+
+doParallel::stopImplicitCluster()
+unregister()
+
+```
+
+```{r dt-tune-results}
+#save(dt_tune_results, dt_tune_wf, file = "dt_tune_results.RData")
+load("dt_tune_results.RData")
+
+dt_tune_results %>%
+  show_best(n = 10, metric = "mn_log_loss") |>
+  kable() |>
+  kable_styling()
+
+```
+
+From cross validation, we see a mean multiclass log loss of $1.33$. This is much better than the model built using cross validation, and only one hyperparameter was tuned. Similar to the nearest neighor model, we will not spend any more time tuning this model, and will instead move on to ensemble models that will have greater improvements.
+
+### Random Forest Model
+
+In this section we consider random forest models which employ lots decision trees in parallel. We will no longer consider a baseline for our ensemble models since it does not provide great insights.
+
+#### With Cross Validation
+
+We start by fitting a random forest model using cross validation.
+
+```{r}
+
+rf_cv_spec <- rand_forest() |>
+  set_mode("classification")
+
+rf_cv_rec <- recipe(priceRange ~ ., data = train) |>
+  step_rm(c("id", "description")) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors())
+
+rf_cv_wf <- workflow() |>
+  add_model(rf_cv_spec) |>
+  add_recipe(rf_cv_rec)
+
+```
+
+```{r}
+#| eval: false
+
+rf_cv_results <- rf_cv_wf |>
+  fit_resamples(
+    resamples = train_folds,
+    metrics = my_metrics
+  )
+
+```
+
+
+```{r}
+#save(rf_cv_results, rf_cv_wf, file = "rf_cv_results.RData")
+load("rf_cv_results.RData")
+
+rf_cv_results |>
+  collect_metrics() |>
+  kable() |>
+  kable_styling()
+
+```
+
+Here, we see a mean multiclass log loss of $0.94$ and an accuracy of $61 \%$. This is quite a bit better than both the nearest neighbor and decision tree models, validating our reasoning for not tuning any further.
+
+#### With Hyperparameter Tuning
+
+To further improve upon this model, we tune the `trees` hyperparameter and observe the effect.
+
+```{r}
+
+rf_tune_spec <- rand_forest(trees = tune()) |>
+  set_mode("classification")
+
+rf_tune_rec <- recipe(priceRange ~ ., data = train) |>
+  step_rm(c("id", "description")) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors())
+
+rf_tune_wf <- workflow() |>
+  add_model(rf_tune_spec) |>
+  add_recipe(rf_tune_rec)
+
+```
+
+```{r}
+#| eval: false
+
+n_cores <- parallel::detectCores()
+cl <- parallel::makeCluster(n_cores - 1, type = "PSOCK")
+doParallel::registerDoParallel(cl)
+
+tictoc::tic()
+
+rf_tune_results <- rf_tune_wf %>%
+  tune_bayes(
+    resamples = train_folds,
+    metrics = metric_set(mn_log_loss),
+    initial = 5,
+    control = control_bayes(parallel_over = "everything")
+  )
+
+tictoc::toc()
+
+doParallel::stopImplicitCluster()
+unregister()
+
+```
+
+```{r}
+#save(rf_tune_results, rf_tune_wf, file = "rf_tune_results.RData")
+load("rf_tune_results.RData")
+
+rf_tune_results %>%
+  show_best(n = 10, metric = "mn_log_loss") |>
+  kable() |>
+  kable_styling()
+
+```
+
+We see only a marginal gain in our multiclass log loss, from $0.9402184$ to $0.9389383$. Before tuning this model any further, we will look at a boosted tree model and determine which model class is more effective on this data set.
+
+### Boosted Tree Model
+
+A boosted tree model is similar to a random forest, but utilizes trees in series rather than in parallel.
+
+#### With Cross Validation
+
+First we build a boosted tree model using cross validation to get a sense of our model's performance.
+
+```{r}
+
+bt_cv_spec <- boost_tree() |>
+  set_engine("xgboost") |>
+  set_mode("classification")
+
+bt_cv_rec <- recipe(priceRange ~ ., data = train) |>
+  step_rm(c("id", "description")) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors()) |>
+  step_novel(all_nominal_predictors()) |>
+  step_dummy(all_nominal_predictors())
+
+bt_cv_wf <- workflow() |>
+  add_model(bt_cv_spec) |>
+  add_recipe(bt_cv_rec)
+
+```
+
+```{r}
+#| eval: false
+
+bt_cv_results <- bt_cv_wf |>
+  fit_resamples(
+    resamples = train_folds,
+    metrics = my_metrics
+  )
+
+```
+
+```{r}
+#save(bt_cv_results, bt_cv_wf, file = "bt_cv_results.RData")
+load("bt_cv_results.RData")
+
+bt_cv_results |>
+  collect_metrics() |>
+  kable() |>
+  kable_styling()
+
+```
+
+Our cross validation of the boosted tree model results in a mean multiclass log loss of $0.99$ and an accuracy of $59 \%$. This is quite a bit better than the nearest neighbor and decision tree cross validation models, but is slightly worse than the random forest cross validation model
+
+#### With Hyperparameter Tuning
+
+Similar to the random forest model, we tune the `trees` hyperparameter and observe the effect.
+
+```{r}
+
+bt_tune_spec <- boost_tree(trees = tune()) |>
+  set_engine("xgboost") |>
+  set_mode("classification")
+
+bt_tune_rec <- recipe(priceRange ~ ., data = train) |>
+  step_rm(c("id", "description")) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors()) |>
+  step_novel(all_nominal_predictors()) |>
+  step_dummy(all_nominal_predictors())
+
+bt_tune_wf <- workflow() |>
+  add_model(bt_tune_spec) |>
+  add_recipe(bt_tune_rec)
+
+```
+
+```{r}
+#| eval: false
+
+n_cores <- parallel::detectCores()
+cl <- parallel::makeCluster(n_cores - 1, type = "PSOCK")
+doParallel::registerDoParallel(cl)
+
+tictoc::tic()
+
+bt_tune_results <- bt_tune_wf %>%
+  tune_bayes(
+    resamples = train_folds,
+    metrics = metric_set(mn_log_loss),
+    initial = 5,
+    control = control_bayes(parallel_over = "everything")
+  )
+
+tictoc::toc()
+
+doParallel::stopImplicitCluster()
+unregister()
+
+```
+
+```{r}
+#save(bt_tune_results, bt_tune_wf, file = "bt_tune_results.RData")
+load("bt_tune_results.RData")
+
+bt_tune_results %>%
+  show_best(n = 10, metric = "mn_log_loss") |>
+  kable() |>
+  kable_styling()
+
+```
+
+From this tuning process, our multiclass log loss actually got worse, going from $0.9855049$ to $0.9908005$. This indicates that maybe a boosted tree model is not the best for this dataset.
+
+### Revisiting Random Forest Model
+
+The random forest model performed the best on our training data when only tuning a single hyperparameter. Now, we will also tune `min_n()` and increase the initial Bayesian steps to $10$. (Will need to come back and figure out mtry, throwing errors)
+
+```{r}
+
+train_pred <- select(train, -id, -description, -priceRange)
+
+finalize(mtry(), train_pred)
+
+rf_tune2_spec <- rand_forest(trees = tune(), min_n = tune()) |>
+  set_mode("classification")
+
+rf_tune2_rec <- recipe(priceRange ~ ., data = train) |>
+  step_rm(c("id", "description")) |>
+  step_impute_knn(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors())
+
+rf_tune2_wf <- workflow() |>
+  add_model(rf_tune2_spec) |>
+  add_recipe(rf_tune2_rec)
+
+```
+
+```{r}
+#| eval: false
+
+n_cores <- parallel::detectCores()
+cl <- parallel::makeCluster(n_cores - 1, type = "PSOCK")
+doParallel::registerDoParallel(cl)
+
+tictoc::tic()
+
+rf_tune2_results <- rf_tune2_wf %>%
+  tune_bayes(
+    resamples = train_folds,
+    metrics = metric_set(mn_log_loss),
+    initial = 10,
+    control = control_bayes(parallel_over = "everything")
+  )
+
+tictoc::toc()
+
+doParallel::stopImplicitCluster()
+unregister()
+
+```
+
+```{r}
+#save(rf_tune2_results, rf_tune2_wf, file = "rf_tune2_results.RData")
+load("rf_tune2_results.RData")
+
+rf_tune2_results %>%
+  show_best(n = 10, metric = "mn_log_loss") |>
+  kable() |>
+  kable_styling()
+
+```
+
+Our mean multiclass log loss has now decreased to $0.9360904$, which is not much better than our first round of hyperparameter tuning. Let's pull out the best model from this tuning process and make predictions on the training set.
+
+```{r}
+
+best_rf <- rf_tune2_results |>
+  select_best(metric = "mn_log_loss")
+
+rf_wf_final <- rf_tune2_wf %>%
+  finalize_workflow(best_rf)
+
+rf_fit <- rf_wf_final %>%
+  fit(train)
+
+```
+
+```{r}
+
+rf_fit |>
+  augment(train) |>
+  mn_log_loss(priceRange, starts_with(".pred"), - .pred_class) |>
+  kable() |>
+  kable_styling()
+
+```
+
+In the training set we see a multiclass log loss of $0.366998$! This is very good but is likely due to chance.
+
+Let's make predictions on the test set to see if it is any worse.
+
+```{r}
+
+rf_fit |>
+  augment(test) |>
+  mn_log_loss(priceRange, starts_with(".pred"), - .pred_class) |>
+  kable() |>
+  kable_styling()
+
+```
+
+On the test set we see a multiclass log loss of $0.9775423$, which is closer to what we expected from the tuning process.
+
+Let's bring in the competition data and extract our predictions into a csv file!
+
+```{r}
+
+submission <- rf_fit |>
+  augment(comp) |>
+  rename(
+    prob_A = ".pred_0-250000",
+    prob_B = ".pred_250000-350000",
+    prob_C = ".pred_350000-450000",
+    prob_D = ".pred_450000-650000",
+    prob_E = ".pred_650000+"
+  ) |>
+  select(id, starts_with ("prob"))
+
+write.csv(submission, "submission.csv", row.names = FALSE)
+
+```
+
+### Model Construction Recap
+
+In this section we have built various classification models and compared their results. Different construction techniques such as cross validation and hyperparameter tuning were used to improve model performance on a test set. We began with simple models, the nearest neighbor and decision tree models. These models performed relatively well on the training data, however they had significant decreases in performance when cross validation was used. Next, we moved into ensemble models, random forests and boosted trees. These models are more effective than simple models since they utilize hundreds of decision trees rather than just one. These models performed quite a bit better than the simple models, especially in terms of multiclass log loss. The random forest slightly outperformed the boosted trees model, and thus we further improved this model class by tuning more hyperparameters. We used this final random forest model to make predictions for the Kaggle competition.
 
 ## Model Assessment
 
