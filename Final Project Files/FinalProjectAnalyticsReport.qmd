@@ -1,0 +1,755 @@
+---
+title: Final Project Analytics Report
+author: 
+  - name: Dillon Labonte
+    email: dillon.labonte@snhu.edu
+    affiliations: 
+      - name: Southern New Hampshire University
+date: today
+date-format: long
+theme: lux
+toc: true
+code-fold: true
+warning: false
+message: false
+---
+
+```{r setup}
+# including necessary libraries
+library(tidyverse)
+library(tidymodels)
+library(patchwork)
+library(kableExtra)
+library(ggmosaic)
+library(rpart.plot)
+
+# styling
+options(kable_styling_bootstrap_options = c("hover", "striped"))
+theme_set(theme_bw(base_size = 14))
+
+# read in data
+data <- read_csv("FourClassDS.csv")
+
+data <- data |>
+  rename(num = ...1)
+
+data <- data |>
+  mutate(id = as.factor(id))
+
+# split data into training, test, and validation sets
+set.seed(1234567890)
+data_splits <- initial_split(data, prop = 0.75)
+
+train <- training(data_splits)
+test <- testing(data_splits)
+
+unregister <- function() {
+  env <- foreach:::.foreachGlobals
+  rm(list=ls(name=env), pos=env)
+}
+
+train_folds <- vfold_cv(train, v = 5)
+
+```
+
+## Statement of Purpose
+
+The purpose of this report is to analyze and build predictive models for a LiDAR data frame. This data was collected from RPLiDAR A1 unit by Slamtech and features 360 distance measurements as well as an environment id column. The environment id corresponds to the following: room: 0, corridor: 1, doorway: 2, hall: 3. By building a predictive classification model, robots utilizing LiDAR technology will be able to more accurately classify the environment they are in. This is crucial for autonomous robot navigation.  
+
+## Executive Summary
+
+
+
+## Introduction
+
+
+
+## Exploratory Data Analysis
+
+```{r}
+
+train |>
+  head() |>
+  kable() |>
+  kable_styling()
+
+```
+
+```{r}
+
+train |>
+  count(id) |>
+  kable() |>
+  kable_styling()
+
+```
+
+```{r}
+
+train |>
+  ggplot() +
+  geom_bar(aes(x = id), fill = 'steelblue') +
+  labs(x = "Environment ID", y = "Count")
+
+```
+
+
+```{r}
+
+dataviz_train <- train |>
+  pivot_longer(
+    cols = -c(num, id),
+    names_to = "Degree",
+    values_to = "Measure"
+  )
+
+```
+
+```{r}
+
+room1 <- dataviz_train |>
+  filter(num == 97) |>
+  ggplot() +
+  geom_point(aes(x = Degree, y = Measure)) +
+  coord_polar(theta = "x") +
+  theme(
+    axis.title.x = element_blank(),  # Removes x-axis label
+    axis.title.y = element_blank(),  # Removes y-axis label
+    axis.text.x = element_blank(),   # Removes x-axis text
+    axis.text.y = element_blank(),   # Removes y-axis text
+    axis.ticks = element_blank()     # Removes axis ticks
+  ) +
+  labs(title = "Example Room 1")
+
+room2 <- dataviz_train |>
+  filter(num == 47) |>
+  ggplot() +
+  geom_point(aes(x = Degree, y = Measure)) +
+  coord_polar(theta = "x") +
+  theme(
+    axis.title.x = element_blank(),  # Removes x-axis label
+    axis.title.y = element_blank(),  # Removes y-axis label
+    axis.text.x = element_blank(),   # Removes x-axis text
+    axis.text.y = element_blank(),   # Removes y-axis text
+    axis.ticks = element_blank()     # Removes axis ticks
+  ) +
+  labs(title = "Example Room 2")
+
+corridor1 <- dataviz_train |>
+  filter(num == 198) |>
+  ggplot() +
+  geom_point(aes(x = Degree, y = Measure)) +
+  coord_polar(theta = "x") +
+  theme(
+    axis.title.x = element_blank(),  # Removes x-axis label
+    axis.title.y = element_blank(),  # Removes y-axis label
+    axis.text.x = element_blank(),   # Removes x-axis text
+    axis.text.y = element_blank(),   # Removes y-axis text
+    axis.ticks = element_blank()     # Removes axis ticks
+  ) +
+  labs(title = "Example Corridor 1")
+
+corridor2 <- dataviz_train |>
+  filter(num == 206) |>
+  ggplot() +
+  geom_point(aes(x = Degree, y = Measure)) +
+  coord_polar(theta = "x") +
+  theme(
+    axis.title.x = element_blank(),  # Removes x-axis label
+    axis.title.y = element_blank(),  # Removes y-axis label
+    axis.text.x = element_blank(),   # Removes x-axis text
+    axis.text.y = element_blank(),   # Removes y-axis text
+    axis.ticks = element_blank()     # Removes axis ticks
+  ) +
+  labs(title = "Example Corridor 2")
+
+doorway1 <- dataviz_train |>
+  filter(num == 300) |>
+  ggplot() +
+  geom_point(aes(x = Degree, y = Measure)) +
+  coord_polar(theta = "x") +
+  theme(
+    axis.title.x = element_blank(),  # Removes x-axis label
+    axis.title.y = element_blank(),  # Removes y-axis label
+    axis.text.x = element_blank(),   # Removes x-axis text
+    axis.text.y = element_blank(),   # Removes y-axis text
+    axis.ticks = element_blank()     # Removes axis ticks
+  ) +
+  labs(title = "Example Doorway 1")
+
+doorway2 <- dataviz_train |>
+  filter(num == 279) |>
+  ggplot() +
+  geom_point(aes(x = Degree, y = Measure)) +
+  coord_polar(theta = "x") +
+  theme(
+    axis.title.x = element_blank(),  # Removes x-axis label
+    axis.title.y = element_blank(),  # Removes y-axis label
+    axis.text.x = element_blank(),   # Removes x-axis text
+    axis.text.y = element_blank(),   # Removes y-axis text
+    axis.ticks = element_blank()     # Removes axis ticks
+  ) +
+  labs(title = "Example Doorway 2")
+
+hall1 <- dataviz_train |>
+  filter(num == 25) |>
+  ggplot() +
+  geom_point(aes(x = Degree, y = Measure)) +
+  coord_polar(theta = "x") +
+  theme(
+    axis.title.x = element_blank(),  # Removes x-axis label
+    axis.title.y = element_blank(),  # Removes y-axis label
+    axis.text.x = element_blank(),   # Removes x-axis text
+    axis.text.y = element_blank(),   # Removes y-axis text
+    axis.ticks = element_blank()     # Removes axis ticks
+  ) +
+  labs(title = "Example Hall 1")
+
+hall2 <- dataviz_train |>
+  filter(num == 43) |>
+  ggplot() +
+  geom_point(aes(x = Degree, y = Measure)) +
+  coord_polar(theta = "x") +
+  theme(
+    axis.title.x = element_blank(),  # Removes x-axis label
+    axis.title.y = element_blank(),  # Removes y-axis label
+    axis.text.x = element_blank(),   # Removes x-axis text
+    axis.text.y = element_blank(),   # Removes y-axis text
+    axis.ticks = element_blank()     # Removes axis ticks
+  ) +
+  labs(title = "Example Hall 2")
+
+```
+
+```{r}
+
+room1 + room2
+
+```
+
+```{r}
+
+corridor1 + corridor2
+
+```
+
+```{r}
+
+doorway1 + doorway2
+
+```
+
+```{r}
+
+hall1 + hall2
+
+```
+
+## Model Construction
+
+In this section we explore various classification model classes and their performance on predicting the environment.
+
+### Decision Tree Model
+
+The first model we build is a simple decision tree which asks yes or no questions and will provide a baseline before moving into more complex model classes.
+
+#### Without Cross Validation
+
+We begin by looking at a simple decision tree model without any cross validation or hyperparameter tuning.
+
+```{r}
+
+dt_spec <- decision_tree() |>
+  set_mode("classification")
+
+dt_rec <- recipe(id ~ ., data = train) |>
+  step_rm(num) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), num_comp = 5)
+
+dt_wf <- workflow() |>
+  add_model(dt_spec) |>
+  add_recipe(dt_rec)
+
+dt_fit <- dt_wf |>
+  fit(train)
+
+```
+
+```{r}
+
+dt_fit |>
+  augment(train) |>
+  accuracy(id, .pred_class) |>
+  select(!.estimator) |>
+  rename(Metric = .metric) |>
+  rename(Estimate = .estimate) |>
+  kable() |>
+  kable_styling()
+
+```
+
+This baseline model actually does quite well, however this is not necessarily a good indicator of how well the model is doing since it is prone to overfitting in the training data.
+
+#### With Cross Validation
+
+To get a better idea of how our model is doing, we use cross validation which will limit the overfitting effect.
+
+```{r}
+
+dt_cv_spec <- decision_tree() |>
+  set_mode("classification")
+
+dt_cv_rec <- recipe(id ~ ., data = train) |>
+  step_rm(num) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), num_comp = 5)
+
+dt_cv_wf <- workflow() |>
+  add_model(dt_cv_spec) |>
+  add_recipe(dt_cv_rec)
+
+```
+
+```{r}
+#| eval: false
+
+dt_cv_results <- dt_cv_wf |>
+  fit_resamples(
+    resamples = train_folds,
+    metrics = metric_set(accuracy)
+  )
+
+```
+
+```{r}
+#save(dt_cv_results, dt_cv_wf, file = "dt_cv_results.RData")
+load("dt_cv_results.RData")
+
+dt_cv_results |>
+  collect_metrics() |>
+  select(!c(.config, .estimator, n)) |>
+  rename(Metric = .metric) |>
+  rename(Mean = mean) |>
+  rename(Standard_Error = std_err) |>
+  kable() |>
+  kable_styling()
+
+```
+
+The cross validation results show an accuracy of $82 \%$, which is a more accurate assessment of our model's performance.
+
+#### Hyperparameter Tuning
+
+To improve the accuracy of the simple decision tree model, hyperparameter tuning is used to find the optimal hyperparameter settings for our model. The parameters that are tuned for the tree are `cost_complexity`, `tree_depth`, and `min_n`, and `num_comp` was tuned for principal component analysis.
+
+```{r}
+
+dt_tune_spec <- decision_tree(cost_complexity = tune(), tree_depth = tune(), min_n = tune()) |>
+  set_mode("classification")
+
+dt_tune_rec <- recipe(id ~ ., data = train) |>
+  step_rm(num) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), num_comp = tune())
+
+dt_tune_wf <- workflow() |>
+  add_model(dt_tune_spec) |>
+  add_recipe(dt_tune_rec)
+
+dt_param_grid <- crossing(
+  num_comp = c(1:10),
+  cost_complexity = 10^seq(-5, 0, length.out = 6),
+  tree_depth = c(1:10),
+  min_n = c(1:5),
+) 
+
+```
+
+```{r}
+#| eval: false
+
+n_cores <- parallel::detectCores()
+cl <- parallel::makeCluster(n_cores - 1, type = "PSOCK")
+doParallel::registerDoParallel(cl)
+
+tictoc::tic()
+
+dt_tune_results <- dt_tune_wf %>%
+  tune_grid(
+    resamples = train_folds,
+    metrics = metric_set(accuracy),
+    grid = dt_param_grid,
+    control = control_grid(parallel_over = "everything")
+  )
+
+tictoc::toc()
+
+doParallel::stopImplicitCluster()
+unregister()
+
+```
+
+```{r dt-tune-results}
+#save(dt_tune_results, dt_tune_wf, file = "dt_tune_results.RData")
+load("dt_tune_results.RData")
+
+dt_tune_results |>
+  show_best(n = 10, metric = "accuracy") |>
+  select(!.config) |>
+  select(!.estimator) |>
+  select(!n) |>
+  rename(Cost_Complexity = cost_complexity) |>
+  rename(Tree_Depth = tree_depth) |>
+  rename(Min_n = min_n) |>
+  rename(Number_of_Components = num_comp) |>
+  rename(Metric = .metric) |>
+  rename(Mean = mean) |>
+  rename(Standard_Error = std_err) |>
+  kable() |>
+  kable_styling()
+
+```
+
+The results of this hyperparameter tuning process show significant improvement from the cross validation model, increasing from $82 \%$ accuracy to about $92 \%$.
+
+The following plot shows a visual of the decision tree model. 
+
+```{r}
+
+best_dt <- dt_tune_results |>
+  select_best(metric = "accuracy")
+
+dt_wf_final <- dt_tune_wf |>
+  finalize_workflow(best_dt)
+
+dt_fit <- dt_wf_final |>
+  fit(train)
+
+dt_fit |>
+  extract_fit_engine() |>
+  rpart.plot()
+
+# extracted_tree <- dt_fit |>
+#   extract_fit_engine()
+# 
+# plot(extracted_tree)
+# text(extracted_tree)
+
+```
+
+
+### Random Forest Model
+
+In this section we start to explore more complex model classes; ensembles. The first we look at is a random forest model which utilizes a large number of decision trees in parallel to improve model performance.
+
+#### With Cross Validation
+
+We begin by jumping straight into a cross validation model to have a good understanding of our model performance.
+
+```{r}
+
+rf_cv_spec <- rand_forest() |>
+  set_mode("classification")
+
+rf_cv_rec <- recipe(id ~ ., data = train) |>
+  step_rm(num) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), num_comp = 5)
+
+rf_cv_wf <- workflow() |>
+  add_model(rf_cv_spec) |>
+  add_recipe(rf_cv_rec)
+
+```
+
+```{r}
+#| eval: false
+
+rf_cv_results <- rf_cv_wf |>
+  fit_resamples(
+    resamples = train_folds,
+    metrics = metric_set(accuracy)
+  )
+
+```
+
+```{r}
+#save(rf_cv_results, rf_cv_wf, file = "rf_cv_results.RData")
+load("rf_cv_results.RData")
+
+rf_cv_results |>
+  collect_metrics() |>
+  select(!c(.config, .estimator, n)) |>
+  rename(Metric = .metric) |>
+  rename(Mean = mean) |>
+  rename(Standard_Error = std_err) |>
+  kable() |>
+  kable_styling()
+
+```
+
+This cross validation based random forest model has an accuracy of $90 \%$, much better than the $82 \%$ accuracy that the decision tree model had.
+
+#### Hyperparameter Tuning
+
+The accuracy of the random forest model can be further improved using hyperparameter tuning. The parameters that are tuned for the model are `trees` and `min_n`, and `num_comp` is tuned for principal component analysis.
+
+```{r}
+
+rf_tune_spec <- rand_forest(trees = tune(), min_n = tune()) |>
+  set_mode("classification")
+
+rf_tune_rec <- recipe(id ~ ., data = train) |>
+  step_rm(num) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), num_comp = tune())
+
+rf_tune_wf <- workflow() |>
+  add_model(rf_tune_spec) |>
+  add_recipe(rf_tune_rec)
+
+rf_param_grid <- crossing(
+  num_comp = c(1:10),
+  trees = seq(1, 2000, by = 199),
+  min_n = c(1:5),
+) 
+
+```
+
+```{r}
+#| eval: false
+
+n_cores <- parallel::detectCores()
+cl <- parallel::makeCluster(n_cores - 1, type = "PSOCK")
+doParallel::registerDoParallel(cl)
+
+tictoc::tic()
+
+rf_tune_results <- rf_tune_wf %>%
+  tune_grid(
+    resamples = train_folds,
+    metrics = metric_set(accuracy),
+    grid = rf_param_grid,
+    control = control_grid(parallel_over = "everything")
+  )
+
+tictoc::toc()
+
+doParallel::stopImplicitCluster()
+unregister()
+
+```
+
+
+```{r rf-tune-results}
+#save(rf_tune_results, rf_tune_wf, file = "rf_tune_results.RData")
+load("rf_tune_results.RData")
+
+rf_tune_results |>
+  show_best(n = 10, metric = "accuracy") |>
+  select(!c(.config, .estimator, n)) |>
+  rename(Trees = trees) |>
+  rename(Min_n = min_n) |>
+  rename(Number_of_Components = num_comp) |>
+  rename(Metric = .metric) |>
+  rename(Mean = mean) |>
+  rename(Standard_Error = std_err) |>
+  kable() |>
+  kable_styling()
+
+```
+
+With hyperparameter tuning, the accuracy of the random forest model increased to $94 \%$ which is pretty good and is the best we have seen so far. It's also important to note that the model was assessed on the training data. An assessment of the model's performance on a test set is in the `Best Model` section.
+
+### Boosted Tree Model
+
+The last model class we explore is a boosted tree model. This model class is also built upon decision trees, but unlike the random forest model, the decision trees are in series one after the other instead of in parallel.
+
+#### With Cross Validation
+
+Again, we jump into a model built using cross validation to get a more accurate understanding of our baseline model performance.
+
+```{r}
+
+bt_cv_spec <- boost_tree() |>
+  set_mode("classification")
+
+bt_cv_rec <- recipe(id ~ ., data = train) |>
+  step_rm(num) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), num_comp = 5)
+
+bt_cv_wf <- workflow() |>
+  add_model(bt_cv_spec) |>
+  add_recipe(bt_cv_rec)
+
+```
+
+```{r}
+#| eval: false
+
+bt_cv_results <- bt_cv_wf |>
+  fit_resamples(
+    resamples = train_folds,
+    metrics = metric_set(accuracy)
+  )
+
+```
+
+```{r}
+#save(bt_cv_results, bt_cv_wf, file = "bt_cv_results.RData")
+load("bt_cv_results.RData")
+
+bt_cv_results |>
+  collect_metrics() |>
+  select(!c(.config, .estimator, n)) |>
+  rename(Metric = .metric) |>
+  rename(Mean = mean) |>
+  rename(Standard_Error = std_err) |>
+  kable() |>
+  kable_styling()
+
+```
+
+The cross validation based boosted tree model has an accuracy of nearly $90 \%$. This is substantially better than the decision tree model accuracy of $82 \%$, and marginally worse than the random forest model accuracy of $90 \%$. 
+
+#### Hyperparameter Tuning
+
+To improve the accuracy of the boosted tree model, we again use hyperparameter tuning. The parameters tuned for the model are `trees`, `min_n`, `tree_depth`, and `learn_rate`, and `num_comp` is tuned for principal component analysis.
+
+```{r}
+
+bt_tune_spec <- boost_tree(trees = tune(), min_n = tune(), tree_depth = tune(), learn_rate = tune()) |>
+  set_mode("classification")
+
+bt_tune_rec <- recipe(id ~ ., data = train) |>
+  step_rm(num) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), num_comp = tune())
+
+bt_tune_wf <- workflow() |>
+  add_model(bt_tune_spec) |>
+  add_recipe(bt_tune_rec)
+
+bt_param_grid <- crossing(
+  num_comp = c(1:7),
+  trees = seq(1, 11, by = 2),
+  min_n = c(1:2),
+  tree_depth = c(1:5),
+  learn_rate = 10^(seq(-4, 0, by = 1))
+) 
+
+```
+
+```{r}
+#| eval: false
+
+n_cores <- parallel::detectCores()
+cl <- parallel::makeCluster(n_cores - 1, type = "PSOCK")
+doParallel::registerDoParallel(cl)
+
+tictoc::tic()
+
+bt_tune_results <- bt_tune_wf %>%
+  tune_grid(
+    resamples = train_folds,
+    metrics = metric_set(accuracy),
+    grid = bt_param_grid,
+    control = control_grid(parallel_over = "everything", verbose = TRUE)
+  )
+
+# bt_tune_results <- bt_tune_wf %>%
+#   tune_bayes(
+#     resamples = train_folds,
+#     metrics = metric_set(accuracy),
+#     initial = 20,
+#     control = control_bayes(parallel_over = "everything")
+#   )
+
+tictoc::toc()
+
+doParallel::stopImplicitCluster()
+unregister()
+
+```
+
+```{r bt-tune-results}
+#save(bt_tune_results, bt_tune_wf, file = "bt_tune_results.RData")
+load("bt_tune_results.RData")
+
+bt_tune_results |>
+  show_best(n = 10, metric = "accuracy") |>
+  select(!c(.config, .estimator, n)) |>
+  rename(Trees = trees) |>
+  rename(Min_n = min_n) |>
+  rename(Tree_Depth = tree_depth) |>
+  rename(Learn_Rate = learn_rate) |>
+  rename(Number_of_Components = num_comp) |>
+  rename(Metric = .metric) |>
+  rename(Mean = mean) |>
+  rename(Standard_Error = std_err) |>
+  kable() |>
+  kable_styling()
+
+```
+
+From this hyperparameter tuning process, we see that the boosted tree model accuracy has increased to about $92 \%$. This is a little better than the cross validation model, however it is still slightly worse than the random forest model
+
+### Best Model
+
+The best model class we explored was the random forest model with an accuracy of about $94 \%$. Let's fit this model to a couple data sets and see how our model performs.
+
+The first data set we fit to is the training data. We expect the model to do well here, since it knows the most about this data set.
+
+```{r}
+
+best_rf <- rf_tune_results |>
+  select_best(metric = "accuracy")
+
+rf_wf_final <- rf_tune_wf |>
+  finalize_workflow(best_rf)
+
+rf_fit <- rf_wf_final |>
+  fit(train)
+
+rf_fit |>
+  augment(train) |>
+  accuracy(id, .pred_class) |>
+  select(!.estimator) |>
+  rename(Metric = .metric) |>
+  rename(Estimate = .estimate) |>
+  kable() |>
+  kable_styling()
+
+```
+
+Here, we see an accuracy of $100 \%$! This is obviously quite optimistic and should not inform our opinions about our model's performance.
+
+Next we look at the holdout `test` set so that we can have a better understanding of our model's performance on new data.
+
+```{r}
+
+rf_fit |>
+  augment(test) |>
+  accuracy(id, .pred_class) |>
+  select(!.estimator) |>
+  rename(Metric = .metric) |>
+  rename(Estimate = .estimate) |>
+  kable() |>
+  kable_styling()
+
+```
+
+Here, we see an accuracy of $93 \%$, which is worse than the accuracy on the training set as expected. However, $93 \%$ is still quite good and indicates that our model is performing well.
+
+## Model Assessment
+
+
+
+## Conclusion
+
+
+
+## References
+
