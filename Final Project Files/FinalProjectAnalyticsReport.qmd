@@ -58,11 +58,21 @@ The purpose of this report is to analyze and build predictive models for a LiDAR
 
 ## Executive Summary
 
+This report explores the use of machine learning techniques to identify the environment type (room, corridor, doorway, hall) based off of scans from the RPLiDAR A1 unit by Slamtech. Each observation in the dataset consists of $360$ measurements from a LiDAR scan, as well as an environment id column to specify the environment the LiDAR unit was placed in. Accurate classification of environments is important for robot sensing and navigation, becoming more and more prevalent with the increasing popularity of self driving cars.
 
+An exploratory data analysis was performed on the dataset to get a sense of what we are working with. Dimension reduction steps (principal component analysis) were necessary due to the small size of the dataset. Three model classes were built and assessed: decision tree, random forest, and boosted tree models. Ultimately, the random forest model performed the best, with an accuracy of $94 \%$ on the training data, and $93 \%$ on the test set.
+
+Although the results of model construction indicate decent performance, the model construction section was limited by the small number of observations and the need for principal component analysis. The need for principal component analysis would be eliminated in the case of a large data set, and would likely improve the overall performance of every model class.
+
+This project highlights the importance of machine learning in an engineering context. Similar approaches can be taken to a number of other engineering problems and will prove to be an important skill.
 
 ## Introduction
 
+Light detection and ranging (LiDAR) technology provides precise and high resolution information about complex 3D environments. LiDAR technology works by emitting rapid pulses of, often infrared, light and measuring the return time back to the source of the pulse after bouncing off an object. Since the speed of light is precisely known, the distance to the object can be calculated with high precision. After computing these distances for an entire area, a precise 3D map of the environment can be generated.
 
+The LiDAR technology works well even in low light environments as well as through thin vegetation, unlike cameras. LiDAR can be used to created detailed topographical maps and identify archaelogic structures through forest canopies and other vegetation. Autonomous vehicles rely heavily on LiDAR technology to detect obstacles, map the surrounding environment, and navigate safely. Due to the speed of light being incrompehensibly fast, LiDAR technology scans and maps environments faster than it could ever be completed manually.
+
+LiDAR technology encompasses the components that are needed to measure and map environments, but is unable to 'think' on its own or identify the type of environment it is in. Thus, it is necessary to have a software system as well as some sort of machine learning model to assist the LiDAR technology in the desired operations. This report uses a LiDAR data frame from Slamtec for their RPLiDAR A1 unit. The dataset consists of `r nrow(data)` observations, with each specifying a scan for a particular environment. By using machine learning techniques and predictive classification models, we are able to predict with decent accuracy what environment type the LiDAR unit is in base on what it is seeing. This sort of analysis is crucial for the advancement of LiDAR technology and robot sensing, and will find practical applications in the world of autonomous vehicles and beyond.
 
 ## Exploratory Data Analysis
 
@@ -674,14 +684,6 @@ bt_tune_results <- bt_tune_wf %>%
     control = control_grid(parallel_over = "everything", verbose = TRUE)
   )
 
-# bt_tune_results <- bt_tune_wf %>%
-#   tune_bayes(
-#     resamples = train_folds,
-#     metrics = metric_set(accuracy),
-#     initial = 20,
-#     control = control_bayes(parallel_over = "everything")
-#   )
-
 tictoc::toc()
 
 doParallel::stopImplicitCluster()
@@ -772,7 +774,18 @@ Another factor that is limiting our model's capabilities is the necessity for di
 
 ## Conclusion
 
+This analytics report provided a detailed approach to predictive modeling for LiDAR dataframes. LiDAR, a technology that uses light pulses to map complex 3D environments, is an essential technology for autonomous navigation in commercial and industrial applications. By using a predictive machine learning model to predict the environment type of a LiDAR module, autonomous navigation and obstacle detection can be improved. This is crucial for the effectiveness and safety of self driving cars as they become increasingly popular.
 
+The exploratory data analysis revealed that our dataset is quite small and dimension reduction techniques such as principal component analysis would need to be applied. It was also found that the response variable, the environment id, was relatively uniformly distributed which is advantageous for a classification problem. To finish off the exploratory data analysis section, we looked at two examples of each environment type, displayed using polar coordinates, to get a sense of what the LiDAR unit was 'seeing'. 
+
+Model construction started with a simple decision tree model which allowed for some interpretation but was mainly used as a baseline model for assessment of more complex model classes. After hyperparameter tuning, all three model classes built (decision tree, random forest, boosted tree) had an accuracy of greater than $90 \%$!. The random forest model was slightly better than the other two, with an accuracy of $94 \%$ on the training set, and $93 \%$ on the test set. This would likely be further improved if a much larger dataset was used, which would eliminate the need for dimension reduction steps.
+
+This project has introduced LiDAR technology and applied tools developed in this course to a real world problem that is relevant to the field of engineering. This project has invoked thought about robot sensing and navigation and raises questions of other opportunities in the field of engineering, specifically electrical, where machine learning techniques can be applied to further enhance our technologies. Data science is an important skill to have in industry and will provide interesting opportunities to those that study it.
 
 ## References
 
+[1]OpenAI, “ChatGPT,” ChatGPT, Apr. 16, 2025. https://chatgpt.com/
+
+[2]T. Huang, “思岚科技-机器人自主定位导航方案 (激光雷达,SLAM,机器人底盘) 提供商,” Slamtec.com, 2016. https://www.slamtec.com/ (accessed Apr. 21, 2025).
+
+[3]Tareq Alhmiedat, “LidarDataFrames,” Kaggle.com, 2022. https://www.kaggle.com/datasets/tareqalhmiedat/lidardataframes (accessed Apr. 21, 2025).
