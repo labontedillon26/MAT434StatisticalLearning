@@ -66,19 +66,30 @@ The purpose of this report is to analyze and build predictive models for a LiDAR
 
 ## Exploratory Data Analysis
 
+In this section we explore the LiDAR dataset to get an idea of what we're working with.
+
+The data set has `r nrow(data)` observations, split up into `r nrow(train)` training observations and `r nrow(test)` testing observations. 
+
+Let's look at the first $5$ rows of the dataset.
+
 ```{r}
 
 train |>
-  head() |>
+  head(5) |>
   kable() |>
   kable_styling()
 
 ```
 
+Each observation has a number attached to it, $360$ LiDAR scan values (in millimeters) and in the last column, an id to specify which environment type the LiDAR module was placed into.
+
+Next let's look at the spread of our response variable, the environment id.
+
 ```{r}
 
 train |>
   count(id) |>
+  rename(ID = id) |>
   kable() |>
   kable_styling()
 
@@ -93,6 +104,11 @@ train |>
 
 ```
 
+The above table and plot show a mostly uniform distribution of the response variable which is quite advantageous for a classification problem, especially with such a small dataset.
+
+The method by which the LiDAR device records values is by rotating on an axis and measuring the distance to the nearest object using pulses of [usually] infrared light. Thus, a plot of the scan values versus the angle will nicely fit into a polar plot, allowing us to see what the robot "sees".
+
+Let's look at two examples of each environment type.
 
 ```{r}
 
@@ -245,9 +261,11 @@ hall1 + hall2
 
 ```
 
+These plots are quite interesting. The two room examples look very neat and are easy to identify as rooms to the human eye. Hall example 2 also shows a decent recreation of the environment. However, the remaining examples do not show much information about the environment and look very sporadic. This may have a bad effect on our model construction and could limit the performance of our models. Improving the LiDAR technology would likely improve the abilities of our predictive models.
+
 ## Model Construction
 
-In this section we explore various classification model classes and their performance on predicting the environment.
+In this section we explore various classification model classes and their performance on predicting the environment. It is important to note that since there are lots of columns in the dataset compared to number of rows, it is necessary to use dimension reduction steps such as principal component analysis. This may limit the predictive ability of our models but it is a necessary step.
 
 ### Decision Tree Model
 
@@ -413,6 +431,8 @@ dt_tune_results |>
 
 The results of this hyperparameter tuning process show significant improvement from the cross validation model, increasing from $82 \%$ accuracy to about $92 \%$.
 
+### Visualizing the Decision Tree
+
 The following plot shows a visual of the decision tree model. 
 
 ```{r}
@@ -430,14 +450,9 @@ dt_fit |>
   extract_fit_engine() |>
   rpart.plot()
 
-# extracted_tree <- dt_fit |>
-#   extract_fit_engine()
-# 
-# plot(extracted_tree)
-# text(extracted_tree)
-
 ```
 
+Since principal component analysis was used to reduce the number of effective columns in the dataset, the decision tree becomes harder to interpret. The principal component values do not have an obvious connection to specific scan values so it is hard to spot trends.
 
 ### Random Forest Model
 
@@ -694,11 +709,19 @@ bt_tune_results |>
 
 ```
 
-From this hyperparameter tuning process, we see that the boosted tree model accuracy has increased to about $92 \%$. This is a little better than the cross validation model, however it is still slightly worse than the random forest model
+From this hyperparameter tuning process, we see that the boosted tree model accuracy has increased to about $92 \%$. This is a little better than the cross validation model, however it is still slightly worse than the random forest model.
+
+### Model Construction Recap
+
+In the model construction section, we built decision tree, random forest, and boosted tree models to predict our LiDAR environment type. The decision tree model modestly performed the worst ($92 \%$ accuracy) but provided us with more interpretive ability. The random forest and boosted tree models improved upon this ($94 \%$ and $92 \%$ accuracy, respectively), but lost the interpretive ability.
+
+## Model Assessment
+
+In the previous section, we explored various model classes and recorded their performance metrics. Let's analyze our best model class a little deeper.
 
 ### Best Model
 
-The best model class we explored was the random forest model with an accuracy of about $94 \%$. Let's fit this model to a couple data sets and see how our model performs.
+The best model class we explored was the random forest model with an accuracy mean of about $94 \%$ from cross validation ($5$ folds). Let's fit this model to a couple data sets and see how our model performs.
 
 The first data set we fit to is the training data. We expect the model to do well here, since it knows the most about this data set.
 
@@ -743,9 +766,9 @@ rf_fit |>
 
 Here, we see an accuracy of $93 \%$, which is worse than the accuracy on the training set as expected. However, $93 \%$ is still quite good and indicates that our model is performing well.
 
-## Model Assessment
+Our best model performs fairly well on the test set, however due to this being such a small data set, the probability that the model got 'lucky' is higher. This is especially prevalent in this dataset, with only $4$ response classes. To get a better idea of our model's performance, it would need to be tested on more data which is not currently available.
 
-
+Another factor that is limiting our model's capabilities is the necessity for dimension reduction using principal component analysis. This problem would be resolved with a much larger dataset and would likely improve the performance of the model and allow for more interpretation in the simple decision tree case. 
 
 ## Conclusion
 
