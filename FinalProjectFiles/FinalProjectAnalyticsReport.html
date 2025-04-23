@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Dillon Labonte">
-<meta name="dcterms.date" content="2025-04-21">
+<meta name="dcterms.date" content="2025-04-23">
 
 <title>Final Project Analytics Report</title>
 <style>
@@ -163,7 +163,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">April 21, 2025</p>
+      <p class="date">April 23, 2025</p>
     </div>
   </div>
   
@@ -229,7 +229,7 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p>Light detection and ranging (LiDAR) technology provides precise and high resolution information about complex 3D environments. LiDAR technology works by emitting rapid pulses of, often infrared, light and measuring the return time back to the source of the pulse after bouncing off an object. Since the speed of light is precisely known, the distance to the object can be calculated with high precision. After computing these distances for an entire area, a precise 3D map of the environment can be generated.</p>
 <p>The LiDAR technology works well even in low light environments as well as through thin vegetation, unlike cameras. LiDAR can be used to created detailed topographical maps and identify archaelogic structures through forest canopies and other vegetation. Autonomous vehicles rely heavily on LiDAR technology to detect obstacles, map the surrounding environment, and navigate safely. Due to the speed of light being incrompehensibly fast, LiDAR technology scans and maps environments faster than it could ever be completed manually.</p>
-<p>LiDAR technology encompasses the components that are needed to measure and map environments, but is unable to ‘think’ on its own or identify the type of environment it is in. Thus, it is necessary to have a software system as well as some sort of machine learning model to assist the LiDAR technology in the desired operations. This report uses a LiDAR data frame from Slamtec for their RPLiDAR A1 unit. The dataset consists of 411 observations, with each specifying a scan for a particular environment. By using machine learning techniques and predictive classification models, we are able to predict with decent accuracy what environment type the LiDAR unit is in base on what it is seeing. This sort of analysis is crucial for the advancement of LiDAR technology and robot sensing, and will find practical applications in the world of autonomous vehicles and beyond.</p>
+<p>LiDAR technology encompasses the components that are needed to measure and map environments, but is unable to ‘think’ on its own or identify the type of environment it is in. Thus, it is necessary to have a software system as well as some sort of machine learning model to assist the LiDAR technology in the desired operations. This report uses a LiDAR data frame from Slamtec for their RPLiDAR A1 unit. The dataset consists of 411 observations, with each specifying a scan for a particular environment. By using machine learning techniques and predictive classification models, we are able to predict with decent accuracy what environment type the LiDAR unit is in based on what it is seeing. This sort of analysis is crucial for the advancement of LiDAR technology and robot sensing, and will find practical applications in the world of autonomous vehicles and beyond.</p>
 </section>
 <section id="exploratory-data-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="exploratory-data-analysis">Exploratory Data Analysis</h2>
@@ -2680,6 +2680,7 @@ window.Quarto = {
 </div>
 </div>
 <p>These plots are quite interesting. The two room examples look very neat and are easy to identify as rooms to the human eye. Hall example 2 also shows a decent recreation of the environment. However, the remaining examples do not show much information about the environment and look very sporadic. This may have a bad effect on our model construction and could limit the performance of our models. Improving the LiDAR technology would likely improve the abilities of our predictive models.</p>
+<p>This exploratory data analysis showed us what our dataset consisted of, 411 observations each with <span class="math inline">\(360\)</span> scan values and an environment id. We saw that the environment id response variable was mostly uniformly distributed which will be advantageous for our model construction section. Lastly, we looked at some polar plots of the LiDAR scans to get a sense of what the unit “sees.”</p>
 </section>
 <section id="model-construction" class="level2">
 <h2 class="anchored" data-anchor-id="model-construction">Model Construction</h2>
@@ -3256,7 +3257,7 @@ window.Quarto = {
 
 </div>
 </div>
-<p>With hyperparameter tuning, the accuracy of the random forest model increased to <span class="math inline">\(94 \%\)</span> which is pretty good and is the best we have seen so far. It’s also important to note that the model was assessed on the training data. An assessment of the model’s performance on a test set is in the <code>Best Model</code> section.</p>
+<p>With hyperparameter tuning, the accuracy of the random forest model increased to <span class="math inline">\(94 \%\)</span> which is pretty good and is the best we have seen so far. It’s also important to note that the model was assessed on the training data. An assessment of the model’s performance on a test set is in the <code>Model Assessment</code> section.</p>
 </section>
 </section>
 <section id="boosted-tree-model" class="level3">
@@ -3533,7 +3534,7 @@ window.Quarto = {
 <p>In the previous section, we explored various model classes and recorded their performance metrics. Let’s analyze our best model class a little deeper.</p>
 <section id="best-model" class="level3">
 <h3 class="anchored" data-anchor-id="best-model">Best Model</h3>
-<p>The best model class we explored was the random forest model with an accuracy mean of about <span class="math inline">\(94 \%\)</span> from cross validation (<span class="math inline">\(5\)</span> folds). Let’s fit this model to a couple data sets and see how our model performs.</p>
+<p>The best model class we explored was the random forest model with an accuracy mean of about <span class="math inline">\(94 \%\)</span> from cross validation (<span class="math inline">\(5\)</span> folds). Let’s fit this model to a couple of data sets and see how our model performs.</p>
 <p>The first data set we fit to is the training data. We expect the model to do well here, since it knows the most about this data set.</p>
 <div class="cell">
 <details class="code-fold">

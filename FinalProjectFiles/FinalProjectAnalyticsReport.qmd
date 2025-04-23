@@ -72,7 +72,7 @@ Light detection and ranging (LiDAR) technology provides precise and high resolut
 
 The LiDAR technology works well even in low light environments as well as through thin vegetation, unlike cameras. LiDAR can be used to created detailed topographical maps and identify archaelogic structures through forest canopies and other vegetation. Autonomous vehicles rely heavily on LiDAR technology to detect obstacles, map the surrounding environment, and navigate safely. Due to the speed of light being incrompehensibly fast, LiDAR technology scans and maps environments faster than it could ever be completed manually.
 
-LiDAR technology encompasses the components that are needed to measure and map environments, but is unable to 'think' on its own or identify the type of environment it is in. Thus, it is necessary to have a software system as well as some sort of machine learning model to assist the LiDAR technology in the desired operations. This report uses a LiDAR data frame from Slamtec for their RPLiDAR A1 unit. The dataset consists of `r nrow(data)` observations, with each specifying a scan for a particular environment. By using machine learning techniques and predictive classification models, we are able to predict with decent accuracy what environment type the LiDAR unit is in base on what it is seeing. This sort of analysis is crucial for the advancement of LiDAR technology and robot sensing, and will find practical applications in the world of autonomous vehicles and beyond.
+LiDAR technology encompasses the components that are needed to measure and map environments, but is unable to 'think' on its own or identify the type of environment it is in. Thus, it is necessary to have a software system as well as some sort of machine learning model to assist the LiDAR technology in the desired operations. This report uses a LiDAR data frame from Slamtec for their RPLiDAR A1 unit. The dataset consists of `r nrow(data)` observations, with each specifying a scan for a particular environment. By using machine learning techniques and predictive classification models, we are able to predict with decent accuracy what environment type the LiDAR unit is in based on what it is seeing. This sort of analysis is crucial for the advancement of LiDAR technology and robot sensing, and will find practical applications in the world of autonomous vehicles and beyond.
 
 ## Exploratory Data Analysis
 
@@ -272,6 +272,8 @@ hall1 + hall2
 ```
 
 These plots are quite interesting. The two room examples look very neat and are easy to identify as rooms to the human eye. Hall example 2 also shows a decent recreation of the environment. However, the remaining examples do not show much information about the environment and look very sporadic. This may have a bad effect on our model construction and could limit the performance of our models. Improving the LiDAR technology would likely improve the abilities of our predictive models.
+
+This exploratory data analysis showed us what our dataset consisted of, `r nrow(data)` observations each with $360$ scan values and an environment id. We saw that the environment id response variable was mostly uniformly distributed which will be advantageous for our model construction section. Lastly, we looked at some polar plots of the LiDAR scans to get a sense of what the unit "sees."
 
 ## Model Construction
 
@@ -585,7 +587,7 @@ rf_tune_results |>
 
 ```
 
-With hyperparameter tuning, the accuracy of the random forest model increased to $94 \%$ which is pretty good and is the best we have seen so far. It's also important to note that the model was assessed on the training data. An assessment of the model's performance on a test set is in the `Best Model` section.
+With hyperparameter tuning, the accuracy of the random forest model increased to $94 \%$ which is pretty good and is the best we have seen so far. It's also important to note that the model was assessed on the training data. An assessment of the model's performance on a test set is in the `Model Assessment` section.
 
 ### Boosted Tree Model
 
@@ -723,7 +725,7 @@ In the previous section, we explored various model classes and recorded their pe
 
 ### Best Model
 
-The best model class we explored was the random forest model with an accuracy mean of about $94 \%$ from cross validation ($5$ folds). Let's fit this model to a couple data sets and see how our model performs.
+The best model class we explored was the random forest model with an accuracy mean of about $94 \%$ from cross validation ($5$ folds). Let's fit this model to a couple of data sets and see how our model performs.
 
 The first data set we fit to is the training data. We expect the model to do well here, since it knows the most about this data set.
 
